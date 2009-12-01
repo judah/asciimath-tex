@@ -4,10 +4,12 @@
 % Reading an undelimited sequence of letters into a token:
 \newtoks\mystuff
 
-%OK, when using this:
-% have a macro \continueloop which echos one arg and then continues
-% then do \expandafter\continueloop\mycsname or something.
-\def\mycsname{\mystuff={}\mycsnameloop}
+\def\mycsname#1{\def\deciderStartB{\deciderStart{#1}}%
+\futurelet\tempToken\deciderStartB}
+\def\deciderStart#1{\ifcat\tempToken a\def\next{%
+\mystuff={#1}\mycsnameloop}%
+\else\def\next{#1\loopcs}\fi\next}
+
 \def\mycsnameloop{%
 \futurelet\tempToken\decider%
 }
@@ -42,9 +44,9 @@
 \def\finisher#1{\catcode32=10\catcode96=13}
 
 \begin{document}
-\tracingmacros=2
+\tracingmacros=1
 \tracingassigns=2
 
-One $`2+to*3`$ three.
+One $`2+a to beta*3`$ three.
 
 \end{document}
