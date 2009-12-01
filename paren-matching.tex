@@ -1,0 +1,31 @@
+\documentclass{article}
+
+% Goal: in math mode, (..) becomes {\left(..\right)}
+% I'll start without nested ones.
+\let\tempparen=(
+\catcode`\(=13
+\newtoks\parenlist
+% TODO how inefficient is the token list appending?  Does it really matter?
+\def({\ifmmode\def\next{\parenlist={}\buildlist}\else\def\next{\tempparen}\fi\next}
+\def\buildlist#1{\ifx#1)\def\next{\left\tempparen\the\parenlist\right)}%
+\else\edef\next{\noexpand\parenlist={\the\parenlist#1}\noexpand\buildlist}%
+\fi\next}
+
+
+% OK, thinking about this some more
+% I don't think the right way is to make () surrounded by {}
+% rather, special-case in the _,^,/ operations.
+
+\begin{document}
+
+\tracingmacros=1
+\tracingassigns=2
+
+Try (hello.
+
+%Try $\show^(e^2)xy$.
+
+\def\foobar{^2}
+Trying $(e^2)$.
+
+\end{document}
