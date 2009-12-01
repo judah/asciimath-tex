@@ -1,0 +1,50 @@
+\documentclass{article}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% Reading an undelimited sequence of letters into a token:
+\newtoks\mystuff
+
+%OK, when using this:
+% have a macro \continueloop which echos one arg and then continues
+% then do \expandafter\continueloop\mycsname or something.
+\def\mycsname{\mystuff={}\mycsnameloop}
+\def\mycsnameloop{%
+\futurelet\tempToken\decider%
+}
+\def\decider{%
+\ifcat a\tempToken\edef\next##1{\noexpand\mystuff={\the\mystuff ##1}\noexpand\mycsnameloop}%
+\else\edef\next{\noexpand\csname\the\mystuff\noexpand\endcsname\noexpand\loopcs}\fi%
+\next%
+}
+
+%%%%%
+% Simple one
+\def\eater#1{}
+
+
+%%%%%%%
+% Looping over a sequence
+%TODO: trailing space after the `` is ignored, b/c futurelet reads 
+% it as the wrong type, I think..
+\catcode`\`=13%
+\def`{%
+%\begingroup%
+\catcode32=\active%
+\loopcs%
+}
+\def\loopcs{\futurelet\tempToken\loopDecider}
+\def\loopDecider{%
+\ifx\tempToken`\let\next\finisher%
+\else\ifcat\tempToken a\let\next\mycsname%
+\else\let\next\echoAndLoop\fi\fi%
+\next}
+\def\echoAndLoop#1{#1\loopcs}
+\def\finisher#1{\catcode32=10\catcode96=13}
+
+\begin{document}
+\tracingmacros=2
+\tracingassigns=2
+
+One $`2+to*3`$ three.
+
+\end{document}
