@@ -30,8 +30,10 @@
 % it as the wrong type, I think..
 \catcode`\`=13%
 \def`{%
-%\begingroup%
+\begingroup
+\ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
 \catcode32=\active%
+\mathdelim
 \loopcs%
 }
 \def\loopcs{\futurelet\tempToken\loopDecider}
@@ -41,12 +43,12 @@
 \else\let\next\echoAndLoop\fi\fi%
 \next}
 \def\echoAndLoop#1{#1\loopcs}
-\def\finisher#1{\catcode32=10\catcode96=13}
+\def\finisher#1{\mathdelim\endgroup}
 
 \begin{document}
 \tracingmacros=1
 \tracingassigns=2
 
-One $`2+a to beta*3`$ three.
+One `2+a to beta*3` three and four.
 
 \end{document}
