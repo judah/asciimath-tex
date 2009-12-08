@@ -7,9 +7,9 @@
 %    \ifcat\foo a\def\next{#1}\else\def\next{#2}\fi\next}}
 
 % eg \peekNext\temp{do some stuff}
-\def\peekNext#1#2{\def\next{#2}\futurelet#1\next}
+\def\peekNext#1#2{\def\nextA{#2}\futurelet#1\nextA}
 \def\ifLetterIsNext#1\else#2\fi{%
-    \peekNext\nextLetter{\ifcat\nextLetter a\def\next{#1}\else\def\next{#2}\fi\next}}
+    \peekNext\nextLetter{\ifcat\nextLetter a\def\nextB{#1}\else\def\nextB{#2}\fi\nextB}}
 
 %\def\ifLetterIsNext#1\else#2\fi{%
 %    \def\todo{\ifcat\nextToken z\def\next{#1}\else\def\next{#2}\fi\next}%
@@ -44,7 +44,17 @@
 %%%%%%
 % parentheses
 % put the ``todo'' in \useParens
-%\def\parseParens
+% Use as: \let\useParens=..\parseParens(...)
+%
+% First, no nesting.
+\def\parseParens#1{\buildList}
+\def\buildList#1#2{%
+    \ifx#2)\def\next{\useParens{#1}}%
+    \else\def\next{\buildList{#1#2}}\fi
+    \next
+}
+
+\def\parenWrap#1{\left(#1\right)}
 
 
 %%%%%
@@ -64,13 +74,14 @@
 \def\finisher#1{\mathdelim\endgroup}
 \def\parseCS{\def\csuser##1{##1\loopcs}\csnamer}
 \def\outputAndContinue#1{#1\loopcs}
-\def\loopcs{%
-    \peekNext\nextToken{%
-        \ifx\nextToken`\let\next=\finisher
-        \else\ifcat\nextToken a\let\next=\parseCS
-        \else\let\next=\outputAndContinue
-        \fi\fi%
-    \next}}
+\def\startParens{\def\useParens##1{\parenWrap{##1}\loopcs}\parseParens}
+\def\loopcs{\usePeek\nextToken{%
+   \ifx\nextToken`\let\nextC=\finisher
+   \else\ifcat\nextToken a\let\nextC=\parseCS
+   \else\ifx\nextToken(\let\nextC=\startParens
+   \else\let\nextC=\outputAndContinue
+   \fi\fi\fi\nextC%
+}}
 \catcode96=13
 \tracingassigns=0
 Stuff
@@ -82,8 +93,8 @@ Some stuff
 \tracingmacros=2
 \tracingassigns=2
 
-`1+alpha to a2 beta`
-
+%\def\useParens#1{[#1,#1]}\parseParens(xyz)123
+`alpha(abc)2`
 \tracingmacros=0
 \tracingassigns=0
 

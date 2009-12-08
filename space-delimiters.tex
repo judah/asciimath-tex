@@ -26,8 +26,9 @@
 
 %%%%%%%
 % Looping over a sequence
-%TODO: trailing space after the `` is ignored, b/c futurelet reads 
-% it as the wrong type, I think..
+% TODO: if a macro takes an argument, it should really be parsed first.
+% TODO: putting something in braces doesn't work for eating it.
+% So 
 \catcode`\`=13%
 \def`{%
 \begingroup

@@ -5,12 +5,34 @@
 \let\tempparen=(
 \catcode`\(=13
 \newtoks\parenlist
+\newcount\parenlevel
 % TODO how inefficient is the token list appending?  Does it really matter?
 \def({\ifmmode\def\next{\parenlist={}\buildlist}\else\def\next{\tempparen}\fi\next}
 \def\buildlist#1{\ifx#1)\def\next{\left\tempparen\the\parenlist\right)}%
 \else\edef\next{\noexpand\parenlist={\the\parenlist#1}\noexpand\buildlist}%
 \fi\next}
 
+% OK, keeping track of nested parens:
+% Maybe just keep counter?
+% so ( and ) get replaced with left or right, and we finish on ) unless counter is zero.
+% But I think TeX doesn't like that...
+\newcount\parenlevel
+
+% Trying to make a \dothen macro with edef:
+% Aright, how to do nested?
+%\def\baz{123}
+%\def\foo{\bar}
+%\def\bar{\baz}
+%%\edef\zip{\bar}
+%%\show\zip
+%
+%\def\dothen#1#2{%
+%\begingroup\catcode`\^^M=13%
+%\def\defrestofline##1^^M{\edef\yo{##1}\yo}%
+%\endgroup%
+%\def\firstone{#1}%
+%\expandafter\expandafter\expandafter\firstone\defrestofline#2%
+%}
 
 % OK, thinking about this some more
 % I don't think the right way is to make () surrounded by {}
@@ -20,6 +42,14 @@
 
 \tracingmacros=1
 \tracingassigns=2
+
+\def\eatthree#1{-#1-\eattwo}
+\def\eattwo#1#2{(#1,#2)}
+
+Trial:\dothen{yesyes}\eatthree 12345
+
+\tracingmacros=0
+\tracingassigns=0
 
 Try (hello.
 
