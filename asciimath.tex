@@ -1,0 +1,85 @@
+\documentclass{article}
+
+
+\def\app#1#2\to#3{\let#1=#3 #2}
+
+\def\usePeek#1#2{\def\todo{\app#1{#2}\to\nextToken}\futurelet\nextToken\todo}
+
+%\def\ifLetterIsNext#1\else#2\fi{\usePeek\foo{%
+%    \ifcat\foo a\def\next{#1}\else\def\next{#2}\fi\next}}
+
+% eg \peekNext\temp{do some stuff}
+\def\peekNext#1#2{\def\next{#2}\futurelet#1\next}
+\def\ifLetterIsNext#1\else#2\fi{%
+    \peekNext\nextLetter{\ifcat\nextLetter a\def\next{#1}\else\def\next{#2}\fi\next}}
+
+%\def\ifLetterIsNext#1\else#2\fi{%
+%    \def\todo{\ifcat\nextToken z\def\next{#1}\else\def\next{#2}\fi\next}%
+%    \futurelet\nextToken\todo}
+
+% Expands the upcoming sequence of letters.  (Assuming there's at least one.)
+% If there's only one letter, we keep it as a letter.
+% If there's more than one, we turn it into a token.
+% Using this: (YES, more tex-y than my lambdas)
+% \def\cont#1{#1\doMoreStuff}
+% \expandafter\cont\mycsname
+% But if it's only one letter, don't bother. (TODO)
+\def\mycsname#1{%
+    \ifLetterIsNext\mycsnameloop{#1}\else#1\fi
+}
+\def\mycsnameloop#1{
+    \ifLetterIsNext\moreloop{#1}
+    \else\csname#1\endcsname\fi
+}
+\def\moreloop#1#2{\mycsnameloop{#1#2}}
+
+% when running csnamer, put the TODO macro in \csuser
+\def\csnamer#1{%
+    \ifLetterIsNext\csnamerloop{#1}\else\csuser#1\fi
+}
+\def\csnamerloop#1{
+    \ifLetterIsNext\moreLooper{#1}
+    \else\expandafter\csuser\csname#1\endcsname\fi
+}
+\def\moreLooper#1#2{\csnamerloop{#1#2}}
+
+%%%%%
+% TODO: can't handle braces.
+% TODO: parens, fractions, etc.
+\catcode`\`=13%
+\def`{%
+\begingroup
+\catcode32=\active
+\catcode96=12
+\ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
+\mathdelim
+\loopcs
+}
+\def\finisher{\mathdelim\endgroup}
+\catcode96=12
+\def\loopcs#1{%
+    \ifx#1`\let\next\finisher
+    \else\ifcat#1a%
+            \def\csuser##1{##1\loopcs}%
+            \def\next{\csnamer#1}
+    \else\def\next{#1\loopcs}\fi\fi
+    \next}
+\catcode96=13
+
+\begin{document}
+
+Stuff
+
+\tracingmacros=2
+\tracingassigns=2
+
+Some stuff
+
+%One \mycsname par abc
+
+`1+alpha to beta`
+
+\tracingmacros=0
+\tracingassigns=0
+
+\end{document}
