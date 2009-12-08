@@ -89,6 +89,7 @@
     \fi\fi\fi\nextC
 }
 
+
 % Read a paren'd list (counting nesting to make sure we're right),
 % scan with scanASCII, then loop with that amount.
 
@@ -103,7 +104,11 @@ Some stuff
 
 %\tracingcommands=2
 
-`+(alpha*\Sigma (2/gamma)beta)`
+% TODO: displaymath doesn't work!
+
+
+\def\foo{2\over t}
+`+(alpha*\Sigma (\foo2/gamma)beta)`
 \tracingmacros=0
 \tracingassigns=0
 
