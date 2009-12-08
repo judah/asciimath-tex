@@ -47,10 +47,15 @@
 % Use as: \let\useParens=..\parseParens(...)
 %
 % First, no nesting.
-\def\parseParens#1{\buildList}
+% Then, count parens and only end when at zero level.
+% (This is not efficient, but whatever.)
+\newcount\parenNest
+\def\parseParens#1{\parenNest=0\buildList}
 \def\buildList#1#2{%
-    \ifx#2)\def\next{\useParens{#1}}%
-    \else\def\next{\buildList{#1#2}}\fi
+    \ifx#2)\ifnum\parenNest>0\def\next{\advance\parenNest-1\buildList{#1#2}}%
+            \else\def\next{\useParens{#1}}\fi%
+    \else\ifx#2(\advance\parenNest by 1\fi
+        \def\next{\buildList{#1#2}}\fi
     \next
 }
 
@@ -75,12 +80,17 @@
     \else\ifcat\nextToken a\def\nextC{%
         \def\csuser####1{\loopASCII{#1####1}}\csnamer}%
     \else\ifx\nextToken(\def\nextC{%
-        \def\useParens####1{\loopASCII{#1\parenWrap{####1}}}\parseParens}%
+        \def\useParens####1{
+            \bgroup\def\useASCII########1{
+                \egroup\loopASCII{#1\parenWrap{########1}}}
+            \scanASCII{####1}}%
+        \parseParens}%
     \else\def\nextC##1{\loopASCII{#1##1}}%
     \fi\fi\fi\nextC
-    %\fi\fi\fi\nextC
 }
 
+% Read a paren'd list (counting nesting to make sure we're right),
+% scan with scanASCII, then loop with that amount.
 
 Stuff
 
@@ -91,9 +101,9 @@ Some stuff
 \tracingmacros=2
 \tracingassigns=2
 
-\tracingcommands=2
+%\tracingcommands=2
 
-`+(alpha*\Sigma beta)`
+`+(alpha*\Sigma (2/gamma)beta)`
 \tracingmacros=0
 \tracingassigns=0
 
