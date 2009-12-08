@@ -60,30 +60,28 @@
 %%%%%
 % TODO: can't handle braces.
 % TODO: parens, fractions, etc.
-\tracingassigns=2
 \catcode96=13%
-\def`{%
+\def`#1`{
 \begingroup
 \catcode32=\active
-\catcode96=12
 \ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
-\mathdelim
-\loopcs
+\def\useASCII##1{\mathdelim##1\mathdelim\endgroup}
+\scanASCII{#1}
 }
-\catcode96=12
-\def\finisher#1{\mathdelim\endgroup}
-\def\parseCS{\def\csuser##1{##1\loopcs}\csnamer}
-\def\outputAndContinue#1{#1\loopcs}
-\def\startParens{\def\useParens##1{\parenWrap{##1}\loopcs}\parseParens}
-\def\loopcs{\usePeek\nextToken{%
-   \ifx\nextToken`\let\nextC=\finisher
-   \else\ifcat\nextToken a\let\nextC=\parseCS
-   \else\ifx\nextToken(\let\nextC=\startParens
-   \else\let\nextC=\outputAndContinue
-   \fi\fi\fi\nextC%
-}}
-\catcode96=13
-\tracingassigns=0
+\def\scanASCII#1{\loopASCII{}#1\end}
+\def\loopASCII#1{\def\next{\loopASCIIa{#1}}\futurelet\nextToken\next}
+\def\loopASCIIa#1{%
+    \ifx\nextToken\end\def\nextC{\useASCII{#1}}%
+    \else\ifcat\nextToken a\def\nextC{%
+        \def\csuser####1{\loopASCII{#1####1}}\csnamer}%
+    \else\ifx\nextToken(\def\nextC{%
+        \def\useParens####1{\loopASCII{#1\parenWrap{####1}}}\parseParens}%
+    \else\def\nextC##1{\loopASCII{#1##1}}%
+    \fi\fi\fi\nextC
+    %\fi\fi\fi\nextC
+}
+
+
 Stuff
 
 Some stuff
@@ -93,8 +91,9 @@ Some stuff
 \tracingmacros=2
 \tracingassigns=2
 
-%\def\useParens#1{[#1,#1]}\parseParens(xyz)123
-`alpha(abc)2`
+\tracingcommands=2
+
+`+(alpha*\Sigma beta)`
 \tracingmacros=0
 \tracingassigns=0
 
