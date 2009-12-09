@@ -1,0 +1,108 @@
+% OK, let's try without having spaces be tokens:
+% Only issue is braces...
+% Given a list of previously stored blocks:
+% Peek 
+
+% Procedure:
+% Keep running list of previously stored blocks.
+
+% Drop spaces.  If we hit the end, stop.
+% If we encounter an lbrace, then recurse on the contents of that block, then add the 
+%   results to the list and repeat.
+% Otherwise, read a block (A).
+% Drop spaces.  
+% If the next token (B) is /, ^ or _, then drop spaces and read another block (C).  Then, 
+%    add {A}B{C} to the list.
+% Otherwise, if A contains only one token, then add it to the list and repeat.
+% Otherwise, add ``{\left(A\right)}'' to the list and repeat.
+% 
+
+% Reading a block:
+% first, drop any spaces.
+% Look at the next token:
+% If it's cat 12, that's it.
+% If it's cat 11, if next token is not a letter then that's it.
+%   otherwise, read as many letters as possible into one control sequence.
+% If it's a it's followed by another letter the
+
+% OK, goal: a macro which expands as follows:
+% If the next non-space character is a lbrace, say yes, OW say no.
+
+\def\peekNext#1#2{\def\nextA{#2}\futurelet#1\nextA}
+\def\ifLetterIsNext#1\else#2\fi{%
+    \peekNext\nextLetter{\ifcat\nextLetter a\def\nextB{#1}\else\def\nextB{#2}\fi\nextB}}
+
+
+\begingroup
+\catcode32=\active
+\gdef\sspace{ }
+\endgroup
+
+\def\dropSpacesAfter#1{#1\begingroup\catcode32=12\loopA}
+\def\loopA{\peekNext\nextTok{\if\nextTok\space\def\next####1{\loopA}%
+                \else\let\next=\endgroup\fi\next}}
+
+\def\dropSpacesThen#1{%
+    \def\loopA{\peekNext\nextTok{\ifcat\nextTok\sspace\let\next=\eatAndLoopA
+            \else\def\next{\endgroup#1}\fi\next}}%
+    \def\eatAndLoopA##1{\loopA}%
+    \begingroup\catcode32=12\loopA}%
+
+%Yes\dropSpacesThen{Hello}   ok.
+
+% Set user in \useReadBlock
+% TODO: extra param for whether it's parens or not.
+\def\readBlock#1{
+    \ifcat#1a\def\next{\def\useTok{\ifcat a\nextTok
+                                    \def\nextB{\readCS#1}%
+                                    \else\def\nextB{\useReadBlock#1}%
+                                    \fi\nextB}%
+                        \futurelet\nextTok\useTok}%
+    \else\ifcat1#1\def\next{\useReadBlock{#1}}%
+    \else\def\next{\message{OOps...#1}}%
+    \fi\fi
+    \next
+}
+
+\def\readCS#1#2{\def\useTok{\ifcat a\nextTok\def\next{\readCS{#1#2}}%
+                    \else\def\next{%
+                        \expandafter\useReadBlock\csname#1#2\endcsname}
+                    \fi\next}%
+                    \futurelet\nextTok\useTok
+}
+
+
+\catcode96=13%
+% Separate into two parts:
+% First, set spaces to active so they can be easily eaten
+% Then, parse the characters inside of the `...` .  
+% Now, all spaces read are active.
+\def`{\begingroup\catcode32=\active\startParse}
+\def\startParse#1`{
+\ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
+\def\useASCII##1{\mathdelim##1\mathdelim\endgroup}
+\scanASCII{#1}
+}
+\def\scanASCII#1{\loopASCII{}#1\end}
+\def\loopASCII#1{\dropSpacesThen{%
+                \def\next{\loopASCIIa{#1}}\futurelet\nextToken\next}}
+\def\loopASCIIa#1{%
+    \ifx\nextToken\end\def\next##1{\useASCII{#1}}
+    %\else\ifx\nextToken\lbrace% TODO...
+    \else\def\next{\def\useReadBlock####1{%
+        \loopASCII{#1####1}}\readBlock}%
+    \fi\next
+}
+
+
+\tracingmacros=1
+\tracingassigns=1
+\tracingcommands=1
+
+`  beta x`
+
+
+\tracingmacros=0
+\tracingassigns=0
+
+\bye

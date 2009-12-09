@@ -80,6 +80,9 @@
     \else\ifcat\nextToken a\def\nextC{%
         \def\csuser####1{\loopASCII{#1####1}}\csnamer}%
     \else\ifx\nextToken(\def\nextC{%
+    % Fractions:
+    % Once the paren is read, look ahead to the next character.
+    % If it's a /, look ahead to the next symbol or parens
         \def\useParens####1{
             \bgroup\def\useASCII########1{
                 \egroup\loopASCII{#1\parenWrap{########1}}}
@@ -89,11 +92,52 @@
     \fi\fi\fi\nextC
 }
 
+% A symbol is either a paren, a csname/letter, or an other char (eg 1)
+
 
 % Read a paren'd list (counting nesting to make sure we're right),
 % scan with scanASCII, then loop with that amount.
 
+% TODOs
+% 1) go back to more lambda-like: eg \withPeek\nextToken{...}
+% 2) reorg w/scanning block by block, where each block is a:
+     - paren 
+     - single letter not followed by another letter
+     - sequence of two or more letters forming a control seq
+% 3) Use this to support /, ^, _
+% 4) Allow nested braces for arguments to commands.
+
+% TODO: square roots, braces
+
+% Procedure:
+% Keep running list of previously stored blocks.
+% Drop spaces.  If we hit the end, stop.
+% If we encounter an lbrace, then recurse on the contents of that block, then add the 
+%   results to the list and repeat.
+% Otherwise, read a block (A).
+% Drop spaces.  If the next token is NOT /, ^ or _, then 
+%    if it's not a paren expr (ie contains only one token)
+%        then just add (A) to the end of the list and repeat;
+%    otherwise, add (A) with surrounding parens and repeat.
+% If the next token is one of those, then drop spaces and read another block (B).  Then, 
+%    add 
+% 
+% 
+
+% Reading a block:
+% first, drop any spaces.
+% Look at the next token:
+% If it's cat 12, that's it.
+% If it's cat 11, if next token is not a letter then that's it.
+%   otherwise, read as many letters as possible into one control sequence.
+% If it's a it's followed by another letter the
+% 
+
 Stuff
+
+
+Parser:
+- read one block
 
 Some stuff
 
