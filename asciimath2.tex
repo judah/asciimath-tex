@@ -26,6 +26,10 @@
 % First, set spaces to active so they can be easily eaten
 % Then, parse the characters inside of the `...` .  
 % Now, all spaces read are active.
+
+% OK, change: need  to fully lex into a token register before outputting.
+\def\appendTok#1#2{\edef\next{\noexpand#1={\the#1\noexpand#2}}\next}
+
 \catcode96=13%
 \def`{\setup\startParse}
 \def\setup{
@@ -35,18 +39,27 @@
     \ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
     % def ^,_,/ and (
     % def sqrt et al
+    \defParenCmds
 }
-\def\startParse#1`{%
-    \mathdelim\lexTokens#1\end\mathdelim\endgroup}
 
+\newtoks\lexedTokens
+\def\addLexed{\appendTok\lexedTokens}
+
+\def\startParse#1`{%
+    \lexedTokens={}\lexTokens#1\end\mathdelim\the\lexedTokens\mathdelim\endgroup}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Lexing
+%
 % TODO handle braces correctly
 % Idea: temp turn them into active chars.
 % (eventually might actually want this...)
 \def\lexTokens#1{%
     \ifx#1\end\let\next=\relax
-    \else\ifcat#1\sspace\let\next=\lexTokens% ignore spaces
-    \else\ifcat#1a\def\next{\parseLetterOrCS#1}%
-    \else\def\next{#1\lexTokens}%
+    % the noexpand is necessary if eg we parse an active (.
+    \else\ifcat\noexpand#1\sspace\let\next=\lexTokens% ignore spaces
+    \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS#1}%
+    \else\def\next{\addLexed#1\lexTokens}%
     \fi\fi\fi
     \next
 }
@@ -55,31 +68,62 @@
 \def\parseLetterOrCS#1{%
     % First check whether the next unparsed token is a letter.
     \def\todo{\ifcat\nextTok a\def\next{\csNameStr={#1}\parseCS}%
-                \else\def\next{#1\lexTokens}\fi\next}%
+                \else\def\next{\addLexed#1\lexTokens}\fi\next}%
     \futurelet\nextTok\todo
 }
 \def\parseCS{\futurelet\nextTok\parseCSa}
 \def\parseCSa{%
     \ifcat\nextTok a\def\next{\addToCSAndCont}%
-    \else\def\next{\emitCSAndLex}
+    \else\def\next{\emitCSAndLex}%
     \fi\next
 }
 \def\addToCSAndCont#1{%
-    \edef\next{\noexpand\csNameStr={\the\csNameStr#1}}%
+    \appendTok\csNameStr#1%\edef\next{\noexpand\csNameStr={\the\csNameStr#1}}%
     \next\parseCS
 }
 \def\emitCSAndLex{%
-    \edef\next{\noexpand\csname\the\csNameStr
-                    \noexpand\endcsname}%
-    \next\lexTokens
+    \edef\nextL{\expandafter\csname\the\csNameStr
+                    \endcsname}%
+    \expandafter\addLexed\nextL\lexTokens
 }
 
 
-\tracingmacros=1
-\tracingassigns=1
-\tracingcommands=1
+%%%%%%%%%%%%%%%%%%%%
+% Parentheses
 
-`  beta x  (`
+\begingroup
+\catcode40=\active
+\gdef\defParenCmds{%
+    \def\lparen{\char40}%
+    \catcode40=\active%
+    \let(=\startParenWrap
+}
+\endgroup
+
+
+
+\newtoks\parenContents
+\newcount\parenLevel
+
+% TODO: this doesn't work for some reason:
+\def\startParenWrap#1){[[#1]]}
+%\def\parenWrap{\parenNest=0\buildList}
+%\def\buildList#1{%
+%    \ifx#1)\ifnum\parenNest>0\def\next{
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%
+% Examples
+
+\tracingmacros=2
+\tracingassigns=2
+\tracingcommands=2
+
+` x+(alpha)`
 
 
 \tracingmacros=0
