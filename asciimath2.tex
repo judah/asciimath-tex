@@ -15,17 +15,7 @@
 %
 % Also redef \sqrt to check if it's followed by a (...), and if so to read that block
 % and do \plainSqrt{...}.
-% 
-% OLD VERSION:
-% OK, let's try without having spaces be tokens:
-% Only issue is braces...
-% Given a list of previously stored blocks:
-% Peek 
-
-% Separate into two parts:
-% First, set spaces to active so they can be easily eaten
-% Then, parse the characters inside of the `...` .  
-% Now, all spaces read are active.
+ 
 
 \newlinechar=`@
 
@@ -55,17 +45,21 @@
 \def\addBlock#1{\appendToks\lexedTokens{\block0{#1}}}
 
 \def\startParse#1`{%
-    \message{Starting to lex:}
+    %\message{Starting to lex:}
     \lexedTokens={}\lexTokens#1\end
-    \message{The lexed tokens:}
+    %\message{The lexed tokens:}
     \showthe\lexedTokens
-    \message{done.}
+    %\message{done.}
     \mathdelim\the\lexedTokens\mathdelim
     \endgroup
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Lexing
+% 
+% TODO:
+% * Support ^,_
+% * Register \sqrt (maybe that shouldn't go here?)
 %
 \begingroup
 \catcode32=13
@@ -132,20 +126,24 @@
 
 \newtoks\parenContents
 \newcount\parenLevel
-\def\startParen{\parenLevel=0\parenContents={}\scanParenBlock}
-\def\scanParenBlock#1{%
-    %\message{We're at:\noexpand#1}
-    \ifx#1\endParen
+
+
+\def\startParen{\scanParenWrap\blockedParenContents}
+\def\scanParenWrap#1{%
+    \parenLevel=0\parenContents={}\scanParenBlock#1%
+}
+\def\scanParenBlock#1#2{%
+    \ifx#2\endParen
         \ifnum\parenLevel>0%
             \advance\parenLevel by -1%
-            \def\next{\appendToks\parenContents{#1}\scanParenBlock}%
-        \else\let\next=\blockedParenContents
+            \def\next{\appendToks\parenContents{#2}\scanParenBlock#1}%
+        \else\let\next=#1
         \fi
     \else
-        \ifx#1\startParen\advance\parenLevel by 1%
+        \ifx#2\startParen\advance\parenLevel by 1%
         \fi
-        \appendToks\parenContents{#1}%
-        \let\next=\scanParenBlock
+        \appendToks\parenContents{#2}%
+        \def\next{\scanParenBlock#1}
     \fi
     \next
 }
@@ -159,7 +157,7 @@
 % Otherwise, pass into the binOp.
 \def\block#1#2{%
     \tempStrA={#1,#2}
-    \message{Outputting block [#1]: \the\tempStrA@}
+    %\message{Outputting block [#1]: \the\tempStrA@}
     %\ifnum#1=0{#2}\else{{\left(#2\right)}}\fi
     \def\todo{\blockA#1{#2}}\futurelet\nextTok\todo
 }
@@ -177,11 +175,20 @@
 
 \def\runBinOp#1\binOp#2#3{
     \ifx#3\block\def\next##1##2{\block0{#2{#1}{##2}}}
-    %\else\ifx#3\startParen
+    \else\ifx#3\startParen\def\next{%
+                    \def\useParen{\parenDenom{#1}{#2}}
+                    \scanParenWrap\useParen
+                }%
     \else\def\next{\message{Sorry, I can't handle this type:\noexpand#3}\end}%
-    \fi%\fi
+    \fi\fi
     \next
 }
+
+\def\parenDenom#1#2{%
+    \edef\todo{\noexpand\block0{\noexpand#2{#1}{\the\parenContents}}}%
+    \todo
+}
+
 %% hack for now; assume denom is simple block:
 %\def\runBinOp#1\binOp#2\block0#3{%
 %    \tempStrB={#1,#2,#3}
@@ -190,13 +197,13 @@
 %}
 
 % For testing:
-\def\binOp#1{#1}
+\def\binOp#1{\message{binOp: Something went wrong...\noexpand#1@}}
 
 
 %%%%%%%%%%%%%%%%%%%%
 % Examples
 \def\startTrace{\message{Starting trace...@}%
-    \tracingmacros=2\tracingassigns=2\tracingcommands=2%
+    \tracingmacros=2\tracingassigns=2\tracingcommands=0%
 }
 \def\endTrace{\message{Ending trace...}\tracingmacros=0\tracingassigns=0\tracingcommands=0}
 
@@ -205,12 +212,16 @@
 \def\frac#1#2{%
     {#1\over#2}%
 }
-\startTrace
 %` startTrace (alpha(frac2)) endTrace`
+
+` 3/5`
 
 $$` 2/3 + ((alpha+2)/2 * 5)/7`$$
 
 `2/3/3`
+
+\startTrace
+$$` z/((q*(2/beta gamma)))`$$
 \endTrace
 
 \bye
