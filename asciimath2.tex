@@ -47,9 +47,9 @@
 \def\startParse#1`{%
     %\message{Starting to lex:}
     \lexedTokens={}\lexTokens#1\end
-    %\message{The lexed tokens:}
-    %\showthe\lexedTokens
-    %\message{done.}
+    \message{The lexed tokens:}
+    \showthe\lexedTokens
+    \message{done.}
     \mathdelim\the\lexedTokens\mathdelim
     \endgroup
 }
@@ -77,7 +77,6 @@
 % (eventually might actually want this...)
 \gdef\lexTokens#1{%
     \ifx#1\end\let\next=\relax
-    \else
     %\message{About to test spaces...first is:}
     %\show#1%
     %\message{And second is:}
@@ -85,18 +84,63 @@
     %\message{So there.}
     %\if\sspaceB\noexpand#1\message{YESYES}\else\message{NONO}\fi
     % the noexpand is necessary if eg we parse an active (.
-    \if\sspaceB\noexpand#1\let\next=\lexTokens% ignore spaces
-    \else\ifx#1/\def\next{\addLexed{\binOp\fracOp}\lexTokens}%
-    \else\ifx#1^\def\next{\addLexed{\binOp\Superscript}\lexTokens}%
-    \else\ifx#1_\def\next{\addLexed{\binOp\Subscript}\lexTokens}%
-    \else\ifx#1(\def\next{\addLexed{\startParen}\lexTokens}%
-    \else\ifx#1)\def\next{\addLexed{\endParen}\lexTokens}%
+    \else\if\sspaceB\noexpand#1\let\next=\lexTokens% ignore spaces
     \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS#1}%
+    \else\ifcat\noexpand#1^\def\next{\addLexed{\binOp\Superscript}\lexTokens}%
+    \else\ifcat\noexpand#1_\def\next{\addLexed{\binOp\Subscript}\lexTokens}%
+    \else\ifcat\noexpand#1/\def\next{\processOtherChar#1}%
     \else\def\next{\addBlock#1\lexTokens}%
-    \fi\fi\fi\fi\fi\fi\fi\fi
+    \fi\fi\fi\fi\fi\fi
     \next
 }%
 
+\def\processOtherChar#1{%
+    %\message{Processing otherchar:#1@}
+    \ifx#1/\def\next{\addLexed{\binOp\fracOp}\lexTokens}%
+    \else\ifx#1(\def\next{\addLexed{\startParen}\lexTokens}%
+    \else\ifx#1)\def\next{\addLexed{\endParen}\lexTokens}%
+    \else\ifx#1-\def\next{\scanMinusOrNeg}%
+    % TODO: if it's a digit (or if it's a '-' and the next token's a digit
+    % then read a number and turn it into a block.
+    \else
+        \ifisdigit#1{\def\next{\scanNumber{#1}}}
+            {\def\next{\addBlock#1\lexTokens}}%
+    \fi\fi\fi\fi
+    \next
+}
+
+% There must be a more efficient way to do this...
+\newif\ifisDigitCond
+\def\ifisdigit#1#2#3{
+    \isDigitCondfalse
+    \ifx0#1\isDigitCondtrue\fi
+    \ifx1#1\isDigitCondtrue\fi
+    \ifx2#1\isDigitCondtrue\fi
+    \ifx3#1\isDigitCondtrue\fi
+    \ifx4#1\isDigitCondtrue\fi
+    \ifx5#1\isDigitCondtrue\fi
+    \ifx6#1\isDigitCondtrue\fi
+    \ifx7#1\isDigitCondtrue\fi
+    \ifx8#1\isDigitCondtrue\fi
+    \ifx9#1\isDigitCondtrue\fi
+    \ifisDigitCond#2\else#3\fi
+}
+
+\def\scanNumber#1{\def\todo{\scanNumberA{#1}}\futurelet\nextTok\todo}
+\def\scanNumberA#1{%
+    \ifisdigit\nextTok{\def\next##1{\scanNumber{#1##1}}}%
+        {\def\next{\addBlock{#1}\lexTokens}}
+    \next
+}
+
+% scanned a '-'; need to peek one more to check if this starts a negative number.
+\def\scanMinusOrNeg{\futurelet\nextTok\scanMinusOrNegA}
+\def\scanMinusOrNegA{%
+    \ifisdigit\nextTok
+        {\def\next{\scanNumber{-}}}%
+        {\def\next{\addBlock{-}\lexTokens}}%
+    \next
+}
 
 %%%%%%%%%%%
 % binary operations
@@ -148,7 +192,23 @@
 \def\scanParenWrap#1{%
     \parenLevel=0\parenContents={}\scanParenBlock#1%
 }
-\def\scanParenBlock#1#2{%
+\def\scanParenBlock#1{\def\todo{\scanParenBlockA{#1}}\futurelet\nextTok\todo}
+% Need to check for '{' b/c it's output by numbers...
+\def\scanParenBlockA#1{%
+    %\message{Checking if upcoming brace...@}
+    %\show\bgroup
+    %\show\nextTok
+    \ifx\bgroup\nextTok
+        \def\next{\scanBracedAndCont{#1}}%
+    \else\def\next{\scanParenBlockB{#1}}%
+    \fi\next
+}
+\def\scanBracedAndCont#1#2{%
+    \appendToks\parenContents{{#2}}%
+    \scanParenBlock#1%
+}
+% next is a single token, read it.
+\def\scanParenBlockB#1#2{%
     \ifx#2\endParen
         \ifnum\parenLevel>0%
             \advance\parenLevel by -1%
@@ -226,8 +286,14 @@
 
 % TODO: frac is being expanded too early...
 %` startTrace (alpha(frac2)) endTrace`
+, `(9)`
+, `(9^-74)`
+`3^2`
+% TODO: DO put parens around frac when it's exponentiated.
+, `125^-74`
+, `1/125^74`
+, `1-a`
 
-` 3/5`
 
 $$` 2/3 + ((alpha+2)/2 * 5)/7`$$
 
