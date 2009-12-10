@@ -57,9 +57,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Lexing
 % 
-% TODO:
-% * Support ^,_
+% TODO (maybe these shouldn't go here):
 % * Register \sqrt (maybe that shouldn't go here?)
+% * Try using operator precedence: a^2/b_3 == (a^2)/(b_3)
+% * also a^2_1 should work better
 %
 \begingroup
 \catcode32=13
@@ -85,14 +86,29 @@
     %\if\sspaceB\noexpand#1\message{YESYES}\else\message{NONO}\fi
     % the noexpand is necessary if eg we parse an active (.
     \if\sspaceB\noexpand#1\let\next=\lexTokens% ignore spaces
-    \else\ifx#1/\def\next{\addLexed{\binOp\frac}\lexTokens}%
+    \else\ifx#1/\def\next{\addLexed{\binOp\fracOp}\lexTokens}%
+    \else\ifx#1^\def\next{\addLexed{\binOp\Superscript}\lexTokens}%
+    \else\ifx#1_\def\next{\addLexed{\binOp\Subscript}\lexTokens}%
     \else\ifx#1(\def\next{\addLexed{\startParen}\lexTokens}%
     \else\ifx#1)\def\next{\addLexed{\endParen}\lexTokens}%
     \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS#1}%
     \else\def\next{\addBlock#1\lexTokens}%
-    \fi\fi\fi\fi\fi\fi
+    \fi\fi\fi\fi\fi\fi\fi\fi
     \next
 }%
+
+
+%%%%%%%%%%%
+% binary operations
+\def\fracOp#1#2{%
+    {#1\over#2}%
+}
+\def\Superscript#1#2{%
+    {#1}^{#2}%
+}
+\def\Subscript#1#2{%
+    {#1}_{#2}%
+}
 
 \newtoks\csNameStr
 \def\parseLetterOrCS#1{%
@@ -209,9 +225,6 @@
 
 
 % TODO: frac is being expanded too early...
-\def\frac#1#2{%
-    {#1\over#2}%
-}
 %` startTrace (alpha(frac2)) endTrace`
 
 ` 3/5`
@@ -220,8 +233,10 @@ $$` 2/3 + ((alpha+2)/2 * 5)/7`$$
 
 `2/3/3`
 
-\startTrace
-$$` z/((q*(2/beta gamma)))`$$
-\endTrace
+$$` z/((q*(2/beta to gamma)))`$$
+
+` alpha^(2+3)/5`
+
+`a^1_2`
 
 \bye
