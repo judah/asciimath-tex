@@ -27,8 +27,16 @@
 % Then, parse the characters inside of the `...` .  
 % Now, all spaces read are active.
 
+\newlinechar=`@
+
 % OK, change: need  to fully lex into a token register before outputting.
-\def\appendTok#1#2{\edef\next{\noexpand#1={\the#1\noexpand#2}}\next}
+\newtoks\tempStrA
+\def\appendToks#1#2{
+    \tempStrA={#2}%
+%    \message{Appending to \noexpand#1: [\the#1] plus [\the\tempStrA]@}
+    \edef\tmpA{\the#1\the\tempStrA}%
+    #1=\expandafter{\tmpA}%
+}
 
 \catcode96=13%
 \def`{\setup\startParse}
@@ -39,13 +47,15 @@
     \ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
     % def ^,_,/ and (
     % def sqrt et al
-    \defParenCmds
+    %\defParenCmds
 }
 
 \newtoks\lexedTokens
-\def\addLexed{\appendTok\lexedTokens}
+\def\addLexed{\appendToks\lexedTokens}
+\def\addBlock#1{\appendToks\lexedTokens{\block0{#1}}}
 
 \def\startParse#1`{%
+    \message{Starting to lex:}
     \lexedTokens={}\lexTokens#1\end
     \message{The lexed tokens:}
     \showthe\lexedTokens
@@ -59,7 +69,7 @@
 %
 \begingroup
 \catcode32=13
-\catcode40=13
+%\catcode40=13
 \gdef\sspaceB{ }
 \gdef\sparenB{(}
 \catcode32=10
@@ -81,9 +91,12 @@
     %\if\sspaceB\noexpand#1\message{YESYES}\else\message{NONO}\fi
     % the noexpand is necessary if eg we parse an active (.
     \if\sspaceB\noexpand#1\let\next=\lexTokens% ignore spaces
+    \else\ifx#1/\def\next{\addLexed{\binOp/}\lexTokens}%
+    \else\ifx#1(\def\next{\addLexed{\startParen}\lexTokens}%
+    \else\ifx#1)\def\next{\addLexed{\endParen}\lexTokens}%
     \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS#1}%
-    \else\def\next{\addLexed#1\lexTokens}%
-    \fi\fi\fi
+    \else\def\next{\addBlock#1\lexTokens}%
+    \fi\fi\fi\fi\fi\fi
     \next
 }%
 
@@ -91,7 +104,7 @@
 \def\parseLetterOrCS#1{%
     % First check whether the next unparsed token is a letter.
     \def\todo{\ifcat\nextTok a\def\next{\csNameStr={#1}\parseCS}%
-                \else\def\next{\addLexed#1\lexTokens}\fi\next}%
+                \else\def\next{\addBlock#1\lexTokens}\fi\next}%
     \futurelet\nextTok\todo
 }
 \def\parseCS{\futurelet\nextTok\parseCSa}
@@ -101,71 +114,66 @@
     \fi\next
 }
 \def\addToCSAndCont#1{%
-    \appendTok\csNameStr#1%\edef\next{\noexpand\csNameStr={\the\csNameStr#1}}%
-    \next\parseCS
+    \appendToks\csNameStr#1%\edef\next{\noexpand\csNameStr={\the\csNameStr#1}}%
+    \parseCS
 }
 \def\emitCSAndLex{%
     \edef\nextL{\the\csNameStr}
-    \expandafter\expandafter\expandafter\addLexed\expandafter\csname\nextL\endcsname\lexTokens
+    \expandafter\expandafter\expandafter\addBlock\expandafter\csname\nextL\endcsname\lexTokens
     %\edef\nextL{\csname\the\csNameStr\endcsname}%
     %\expandafter\addLexed\nextL\lexTokens
 }
 
-
-%%%%%%%%%%%%%%%%%%%%
-% Parentheses
-
-\begingroup
-\catcode40=\active
-\gdef\defParenCmds{%
-    \def\lparen{\char40}%
-    \catcode40=13%
-    \let(=\parenFunc
-}
-\endgroup
-
-
+%%%%%%%%%%%%%%
+%% Building from blocks
+% 
+% OK, the lexer's done.  First up: startParen, which just expands
+% into a \block1.
 
 \newtoks\parenContents
 \newcount\parenLevel
-
-% TODO: handle braces.
-\begingroup
-\catcode40=13
-% Parses parentheses and places them inside of \parenContents;
-% then runs #1.
-% Eg \parenWrap\foo, creates tok list and calls \foo{...}
-\gdef\parenWrap#1{\parenLevel=0\parenContents={}\buildList#1}
-\gdef\buildList#1#2{%
-    \ifx#2)\ifnum\parenLevel>0\def\next{\advance\parenLevel-1%
-                                \appendTok\parenContents#2\buildList#1}%
-            \else\let\next=#1\fi
-    \else\ifx#2(\advance\parenLevel by 1\fi
-        \def\next{\appendTok\parenContents{#2}\buildList#1}%
+\def\startParen{\parenLevel=0\parenContents={}\scanParenBlock}
+\def\scanParenBlock#1{%
+    %\message{We're at:\noexpand#1}
+    \ifx#1\endParen
+        \ifnum\parenLevel>0%
+            \advance\parenLevel by -1%
+            \def\next{\appendToks\parenContents{#1}\scanParenBlock}%
+        \else\expandafter\block\expandafter1\expandafter{\the\parenContents}%
+             \let\next=\relax
+        \fi
+    \else
+        \ifx#1\startParen\advance\parenLevel by 1%
+        \fi
+        \appendToks\parenContents{#1}%
+        \let\next=\scanParenBlock
     \fi
     \next
 }
-\endgroup
 
-%\def\useParenContents{\left(\the\parenContents\right)} % TODO
-
-\def\parenFunc{\parenWrap\parenFuncA}
-\def\parenFuncA{\left(\the\parenContents\right)}
-%\def\parenFunc{\parenWrap\parenFuncA}
-%\def\parenFuncA#1{\def\todo{\parenFuncB{#1}}\futurelet\tokAfterParen\todo}
-%\def\parenFuncB#1{\ifx\tokAfterParen/%
-%    \def\todo{\
+% For testing:
+\def\block#1#2{
+    \tempStrA={#2}
+    \message{Outputting block [#1]: \the\tempStrA@}
+    \ifnum#1=0{#2}\else{{\left(#2\right)}}\fi
+}
+\def\binOp#1{#1}
 
 
 %%%%%%%%%%%%%%%%%%%%
 % Examples
-\def\startTrace{\message{Starting trace...}\tracingmacros=2\tracingassigns=2\tracingcommands=2}
+\def\startTrace{\message{Starting trace...}%
+    \tracingmacros=2\tracingassigns=2\tracingcommands=2%
+}
 \def\endTrace{\message{Ending trace...}\tracingmacros=0\tracingassigns=0\tracingcommands=0}
 
 
 % TODO: frac is being expanded too early...
 \def\frac{{2\over\alpha}}
 \def\fracfrac{{2^{10}\over\alpha}}
-` startTrace (alpha(frac2)) endTrace`
+\startTrace
+%` startTrace (alpha(frac2)) endTrace`
+`abc (3+(2x))/5`
+\endTrace
 
 \bye
