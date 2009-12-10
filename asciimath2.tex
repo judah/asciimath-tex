@@ -47,9 +47,9 @@
 \def\startParse#1`{%
     %\message{Starting to lex:}
     \lexedTokens={}\lexTokens#1\end
-    \message{The lexed tokens:}%
-    \showthe\lexedTokens
-    \message{done.}%
+    %\message{The lexed tokens:}%
+    %\showthe\lexedTokens
+    %\message{done.}%
     \mathdelim\the\lexedTokens\mathdelim
     \endgroup
 }
@@ -269,7 +269,7 @@
 
 \newtoks\tmpToksD
 \def\parenDenom#1#2{%
-    \message{In parenDenom: just parsed: \the\parenContents}%
+    %\message{In parenDenom: just parsed: \the\parenContents}%
     \tmpToksD={#1}
     \edef\todoC{\noexpand\block0{\noexpand#2{\the\tmpToksD}{\the\parenContents}}}%
     \todoC
@@ -318,27 +318,24 @@
 \testit{(9^-74)}
 
 \testit{3^2}
-% TODO: DO put parens around frac when it's exponentiated.
 % TODO: test for space elimination.
 \testit{ 125^-74}
+% TODO: This should parse as 1/(125^74)
 \testit{1/125^74}
+\testit{(1/125)^74}
 \testit{1-a}
 
-\startTrace
-%, `(1//2)/(7//4)`
+\testit{(1//2)/(7//4)}
 \testit{(9)/(7)}
-\bye
 
+\testit{ 2/3 + ((alpha+2)/2 * 5)/7}
 
+\testit{2/3/3}
 
-$$` 2/3 + ((alpha+2)/2 * 5)/7`$$
+\testit{z/((q*(2/beta to gamma)))}
 
-`2/3/3`
+\testit{alpha^(2+3)/5}
 
-$$` z/((q*(2/beta to gamma)))`$$
-
-` alpha^(2+3)/5`
-
-`a^1_2`
+\testit{a^1_2}
 
 \bye
