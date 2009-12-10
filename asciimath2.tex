@@ -47,7 +47,7 @@
 \def\startParse#1`{%
     %\message{Starting to lex:}
     \lexedTokens={}\lexTokens#1\end
-    \message{The lexed tokens: \the\lexedTokens@}%
+    %\message{The lexed tokens: \the\lexedTokens@}%
     %\message{done.}%
     \mathdelim\the\lexedTokens\mathdelim
     \endgroup
@@ -328,22 +328,62 @@
 %%%%%%%%%%%%%%%%%%%%
 % Examples
 \def\startTrace{\message{Starting trace...@}%
-    \tracingmacros=2\tracingassigns=2\tracingcommands=0%
+    \tracingmacros=2\tracingassigns=2\tracingcommands=2%
 }
-\def\endTrace{\message{Ending trace...}\tracingmacros=0\tracingassigns=0\tracingcommands=0}
+\def\endTrace{\message{Ending trace...@}\tracingmacros=0\tracingassigns=0\tracingcommands=0}
+
+\parskip=10pt
 
 % NB this doesn't handle spaces exactly the same as `...`
-\parskip=10pt
-\def\testit#1{%
+% New plan:
+% - start group, obey spaces
+% - read brace-surrounded arg.
+% - endgroup
+% - write it to a file.
+% - print it out in tt, with super/subscripts replaced.
+% - read in from the file
+% - pass to `...`
+\begingroup
+\catcode32=13%
+\gdef\changeSpaces{%
+    \catcode32=13%
+    \let =\ %
+}
+\endgroup
+
+
+\def\testit{\begingroup\changeSpaces\testitA}
+\def\testitA#1{%
+    \tempStrA={#1}%
+    %\message{testitA:\the\tempStrA@}%
     \par
-    {\tt\char18\replaceSuperSubScript#1\end\char18}
-    becomes: `#1`
+    {\tt\char18\replaceSuperSubScript#1\end\char18}%
+    \writeTempStrAToFile
+    \endgroup
+    \ becomes:
+    \runFileRead
     \par\par
 }
+\newwrite\outfile
+\def\writeTempStrAToFile{%
+    \immediate\openout\outfile=temp%
+    \immediate\write\outfile{\the\tempStrA}%
+    \immediate\closeout\outfile
+}
+\def\runFileRead{%
+    \immediate\openin\outfile=temp%
+    \immediate\read\outfile to \tempStr
+    \expandafter`\tempStr`
+}
+
 
 % Hard to just set the catcodes because we want the ^ as letters in the \tt, and
 % as superscripts in the `...`. 
-\def\replaceSuperSubScript#1{%
+\def\replaceSuperSubScript{\futurelet\nextTok\replaceSuperSubScriptA}
+\def\replaceSuperSubScriptA#1{%
+    %\message{Next token:@}%
+    %\show\nextTok
+    %\show#1%
     \ifx#1\end\let\next=\relax
     \else\ifx#1^\def\next{\char94\replaceSuperSubScript}%
     \else\ifx#1_\def\next{\char95\replaceSuperSubScript}%
@@ -352,18 +392,25 @@
     \next
 }
 
-% TODO: frac is being expanded too early...
-%` startTrace (alpha(frac2)) endTrace`
-\testit{(9)}
+%\startTrace
+\testit{ (9)}
+%\endTrace
+%\bye
 \testit{(9^-74)}
 
 \testit{3^2}
 % TODO: test for space elimination.
+% In particular, without the testit macro
+% which I don't trust to completely eliminate spaces.
 \testit{ 125^-74}
 % TODO: This should parse as 1/(125^74)
 \testit{1/125^74}
 \testit{(1/125)^74}
 \testit{1-a}
+
+% TODO: way for explicit spaces
+% (maybe just "\ "?)
+\testit{1 234}
 
 \testit{(1//2)/(7//4)}
 \testit{(9)/(7)}
