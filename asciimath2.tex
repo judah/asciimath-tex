@@ -21,7 +21,7 @@
 
 % OK, change: need  to fully lex into a token register before outputting.
 \newtoks\tempStrA
-\def\appendToks#1#2{
+\def\appendToks#1#2{%
     \tempStrA={#2}%
 %    \message{Appending to \noexpand#1: [\the#1] plus [\the\tempStrA]@}
     \edef\tmpA{\the#1\the\tempStrA}%
@@ -30,7 +30,7 @@
 
 \catcode96=13%
 \def`{\setup\startParse}
-\def\setup{
+\def\setup{%
     \begingroup
     \catcode32=\active
     \def\sspace{ }% Do it here so the inside space is lexed as active
@@ -47,9 +47,9 @@
 \def\startParse#1`{%
     %\message{Starting to lex:}
     \lexedTokens={}\lexTokens#1\end
-    \message{The lexed tokens:}
+    \message{The lexed tokens:}%
     \showthe\lexedTokens
-    \message{done.}
+    \message{done.}%
     \mathdelim\the\lexedTokens\mathdelim
     \endgroup
 }
@@ -89,29 +89,36 @@
     \else\ifcat\noexpand#1^\def\next{\addLexed{\binOp\Superscript}\lexTokens}%
     \else\ifcat\noexpand#1_\def\next{\addLexed{\binOp\Subscript}\lexTokens}%
     \else\ifcat\noexpand#1/\def\next{\processOtherChar#1}%
-    \else\def\next{\addBlock#1\lexTokens}%
+    \else\def\next{\addBlock{#1}\lexTokens}%
     \fi\fi\fi\fi\fi\fi
     \next
 }%
 
 \def\processOtherChar#1{%
-    %\message{Processing otherchar:#1@}
-    \ifx#1/\def\next{\addLexed{\binOp\fracOp}\lexTokens}%
+    \ifx#1/\let\next=\scanFracOrDiv
     \else\ifx#1(\def\next{\addLexed{\startParen}\lexTokens}%
     \else\ifx#1)\def\next{\addLexed{\endParen}\lexTokens}%
     \else\ifx#1-\def\next{\scanMinusOrNeg}%
     % TODO: if it's a digit (or if it's a '-' and the next token's a digit
     % then read a number and turn it into a block.
     \else
-        \ifisdigit#1{\def\next{\scanNumber{#1}}}
-            {\def\next{\addBlock#1\lexTokens}}%
+        \ifisdigit#1{\def\next{\scanNumber{#1}}}%
+            {\def\next{\addBlock{#1}\lexTokens}}%
     \fi\fi\fi\fi
+    \next
+}
+
+\def\scanFracOrDiv{\futurelet\nextTok\scanFracOrDivA}
+\def\scanFracOrDivA{%
+    \ifx\nextTok/\def\next##1{\addBlock{/}\lexTokens}%
+    \else\def\next{\addLexed{\binOp\fracOp}\lexTokens}%
+    \fi
     \next
 }
 
 % There must be a more efficient way to do this...
 \newif\ifisDigitCond
-\def\ifisdigit#1#2#3{
+\def\ifisdigit#1#2#3{%
     \isDigitCondfalse
     \ifx0#1\isDigitCondtrue\fi
     \ifx1#1\isDigitCondtrue\fi
@@ -129,7 +136,7 @@
 \def\scanNumber#1{\def\todo{\scanNumberA{#1}}\futurelet\nextTok\todo}
 \def\scanNumberA#1{%
     \ifisdigit\nextTok{\def\next##1{\scanNumber{#1##1}}}%
-        {\def\next{\addBlock{#1}\lexTokens}}
+        {\def\next{\addBlock{#1}\lexTokens}}%
     \next
 }
 
@@ -213,13 +220,13 @@
         \ifnum\parenLevel>0%
             \advance\parenLevel by -1%
             \def\next{\appendToks\parenContents{#2}\scanParenBlock#1}%
-        \else\let\next=#1
+        \else\let\next=#1%
         \fi
     \else
         \ifx#2\startParen\advance\parenLevel by 1%
         \fi
         \appendToks\parenContents{#2}%
-        \def\next{\scanParenBlock#1}
+        \def\next{\scanParenBlock#1}%
     \fi
     \next
 }
@@ -232,7 +239,7 @@
 % Next, block checks whether it's followed by a binOp.  If not, just output.
 % Otherwise, pass into the binOp.
 \def\block#1#2{%
-    \tempStrA={#1,#2}
+    \tempStrA={#1,#2}%
     %\message{Outputting block [#1]: \the\tempStrA@}
     %\ifnum#1=0{#2}\else{{\left(#2\right)}}\fi
     \def\todo{\blockA#1{#2}}\futurelet\nextTok\todo
@@ -249,10 +256,10 @@
 \newtoks\tempStrB
 \newtoks\tempStrC
 
-\def\runBinOp#1\binOp#2#3{
-    \ifx#3\block\def\next##1##2{\block0{#2{#1}{##2}}}
+\def\runBinOp#1\binOp#2#3{%
+    \ifx#3\block\def\next##1##2{\block0{#2{#1}{##2}}}%
     \else\ifx#3\startParen\def\next{%
-                    \def\useParen{\parenDenom{#1}{#2}}
+                    \def\useParen{\parenDenom{#1}{#2}}%
                     \scanParenWrap\useParen
                 }%
     \else\def\next{\message{Sorry, I can't handle this type:\noexpand#3}\end}%
@@ -260,9 +267,12 @@
     \next
 }
 
+\newtoks\tmpToksD
 \def\parenDenom#1#2{%
-    \edef\todo{\noexpand\block0{\noexpand#2{#1}{\the\parenContents}}}%
-    \todo
+    \message{In parenDenom: just parsed: \the\parenContents}%
+    \tmpToksD={#1}
+    \edef\todoC{\noexpand\block0{\noexpand#2{\the\tmpToksD}{\the\parenContents}}}%
+    \todoC
 }
 
 %% hack for now; assume denom is simple block:
@@ -283,16 +293,42 @@
 }
 \def\endTrace{\message{Ending trace...}\tracingmacros=0\tracingassigns=0\tracingcommands=0}
 
+\parskip=10pt
+\def\testit#1{%
+    \par
+    {\tt\char18\replaceSuperSubScript#1\end\char18}
+    becomes: `#1`
+    \par\par
+}
+
+% Hard to just set the catcodes because we want the ^ as letters in the \tt, and
+% as superscripts in the `...`. 
+\def\replaceSuperSubScript#1{%
+    \ifx#1\end\let\next=\relax
+    \else\ifx#1^\def\next{\char94\replaceSuperSubScript}%
+    \else\ifx#1_\def\next{\char95\replaceSuperSubScript}%
+    \else\def\next{#1\replaceSuperSubScript}%
+    \fi\fi\fi
+    \next
+}
 
 % TODO: frac is being expanded too early...
 %` startTrace (alpha(frac2)) endTrace`
-, `(9)`
-, `(9^-74)`
-`3^2`
+\testit{(9)}
+\testit{(9^-74)}
+
+\testit{3^2}
 % TODO: DO put parens around frac when it's exponentiated.
-, `125^-74`
-, `1/125^74`
-, `1-a`
+% TODO: test for space elimination.
+\testit{ 125^-74}
+\testit{1/125^74}
+\testit{1-a}
+
+\startTrace
+%, `(1//2)/(7//4)`
+\testit{(9)/(7)}
+\bye
+
 
 
 $$` 2/3 + ((alpha+2)/2 * 5)/7`$$
