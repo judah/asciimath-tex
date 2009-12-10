@@ -174,12 +174,20 @@
 }
 \newtoks\tempStrB
 \newtoks\tempStrC
-% hack for now; assume denom is simple block:
-\def\runBinOp#1\binOp#2\block0#3{%
-    \tempStrB={#1,#2,#3}
-    \message{RunBinOp:\the\tempStrB@}
-    #2{#1}{#3}%
+
+\def\runBinOp#1\binOp#2#3{
+    \ifx#3\block\def\next##1##2{\block0{#2{#1}{##2}}}
+    %\else\ifx#3\startParen
+    \else\def\next{\message{Sorry, I can't handle this type:\noexpand#3}\end}%
+    \fi%\fi
+    \next
 }
+%% hack for now; assume denom is simple block:
+%\def\runBinOp#1\binOp#2\block0#3{%
+%    \tempStrB={#1,#2,#3}
+%    \message{RunBinOp:\the\tempStrB@}
+%    #2{#1}{#3}%
+%}
 
 % For testing:
 \def\binOp#1{#1}
@@ -199,7 +207,10 @@
 }
 \startTrace
 %` startTrace (alpha(frac2)) endTrace`
-` ((alpha+2)/2 * 5)/7`
+
+$$` 2/3 + ((alpha+2)/2 * 5)/7`$$
+
+`2/3/3`
 \endTrace
 
 \bye
