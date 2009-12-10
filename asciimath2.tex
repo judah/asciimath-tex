@@ -120,7 +120,7 @@
 \gdef\defParenCmds{%
     \def\lparen{\char40}%
     \catcode40=13%
-    \let(=\parenWrap
+    \let(=\parenFunc
 }
 \endgroup
 
@@ -132,21 +132,29 @@
 % TODO: handle braces.
 \begingroup
 \catcode40=13
-\gdef\parenWrap{\parenLevel=0\parenContents={}\buildList}
-\gdef\buildList#1{%
-    \ifx#1)\ifnum\parenLevel>0\def\next{\advance\parenLevel-1%
-                                \appendTok\parenContents#1\buildList}
-            \else\let\next=\useParenContents\fi
-    \else\ifx#1(\advance\parenLevel by 1\fi
-        \def\next{\appendTok\parenContents#1\buildList}%
+% Parses parentheses and places them inside of \parenContents;
+% then runs #1.
+% Eg \parenWrap\foo, creates tok list and calls \foo{...}
+\gdef\parenWrap#1{\parenLevel=0\parenContents={}\buildList#1}
+\gdef\buildList#1#2{%
+    \ifx#2)\ifnum\parenLevel>0\def\next{\advance\parenLevel-1%
+                                \appendTok\parenContents#2\buildList#1}%
+            \else\let\next=#1\fi
+    \else\ifx#2(\advance\parenLevel by 1\fi
+        \def\next{\appendTok\parenContents{#2}\buildList#1}%
     \fi
     \next
 }
 \endgroup
 
-\def\useParenContents{\left(\the\parenContents\right)} % TODO
+%\def\useParenContents{\left(\the\parenContents\right)} % TODO
 
-
+\def\parenFunc{\parenWrap\parenFuncA}
+\def\parenFuncA{\left(\the\parenContents\right)}
+%\def\parenFunc{\parenWrap\parenFuncA}
+%\def\parenFuncA#1{\def\todo{\parenFuncB{#1}}\futurelet\tokAfterParen\todo}
+%\def\parenFuncB#1{\ifx\tokAfterParen/%
+%    \def\todo{\
 
 
 %%%%%%%%%%%%%%%%%%%%
@@ -158,6 +166,6 @@
 % TODO: frac is being expanded too early...
 \def\frac{{2\over\alpha}}
 \def\fracfrac{{2^{10}\over\alpha}}
-` startTrace ((frac2)) endTrace`
+` startTrace (alpha(frac2)) endTrace`
 
 \bye
