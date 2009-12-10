@@ -46,23 +46,46 @@
 \def\addLexed{\appendTok\lexedTokens}
 
 \def\startParse#1`{%
-    \lexedTokens={}\lexTokens#1\end\mathdelim\the\lexedTokens\mathdelim\endgroup}
+    \lexedTokens={}\lexTokens#1\end
+    \message{The lexed tokens:}
+    \showthe\lexedTokens
+    \message{done.}
+    \mathdelim\the\lexedTokens\mathdelim
+    \endgroup
+}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Lexing
 %
+\begingroup
+\catcode32=13
+\catcode40=13
+\gdef\sspaceB{ }
+\gdef\sparenB{(}
+\catcode32=10
+\endgroup
+
+
+
 % TODO handle braces correctly
 % Idea: temp turn them into active chars.
 % (eventually might actually want this...)
-\def\lexTokens#1{%
+\gdef\lexTokens#1{%
     \ifx#1\end\let\next=\relax
+    \else
+    %\message{About to test spaces...first is:}
+    %\show#1%
+    %\message{And second is:}
+    %\show\sspaceB
+    %\message{So there.}
+    %\if\sspaceB\noexpand#1\message{YESYES}\else\message{NONO}\fi
     % the noexpand is necessary if eg we parse an active (.
-    \else\ifcat\noexpand#1\sspace\let\next=\lexTokens% ignore spaces
+    \if\sspaceB\noexpand#1\let\next=\lexTokens% ignore spaces
     \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS#1}%
     \else\def\next{\addLexed#1\lexTokens}%
     \fi\fi\fi
     \next
-}
+}%
 
 \newtoks\csNameStr
 \def\parseLetterOrCS#1{%
@@ -82,9 +105,10 @@
     \next\parseCS
 }
 \def\emitCSAndLex{%
-    \edef\nextL{\expandafter\csname\the\csNameStr
-                    \endcsname}%
-    \expandafter\addLexed\nextL\lexTokens
+    \edef\nextL{\the\csNameStr}
+    \expandafter\expandafter\expandafter\addLexed\expandafter\csname\nextL\endcsname\lexTokens
+    %\edef\nextL{\csname\the\csNameStr\endcsname}%
+    %\expandafter\addLexed\nextL\lexTokens
 }
 
 
@@ -95,8 +119,8 @@
 \catcode40=\active
 \gdef\defParenCmds{%
     \def\lparen{\char40}%
-    \catcode40=\active%
-    \let(=\startParenWrap
+    \catcode40=13%
+    \let(=\parenWrap
 }
 \endgroup
 
@@ -105,28 +129,35 @@
 \newtoks\parenContents
 \newcount\parenLevel
 
-% TODO: this doesn't work for some reason:
-\def\startParenWrap#1){[[#1]]}
-%\def\parenWrap{\parenNest=0\buildList}
-%\def\buildList#1{%
-%    \ifx#1)\ifnum\parenNest>0\def\next{
+% TODO: handle braces.
+\begingroup
+\catcode40=13
+\gdef\parenWrap{\parenLevel=0\parenContents={}\buildList}
+\gdef\buildList#1{%
+    \ifx#1)\ifnum\parenLevel>0\def\next{\advance\parenLevel-1%
+                                \appendTok\parenContents#1\buildList}
+            \else\let\next=\useParenContents\fi
+    \else\ifx#1(\advance\parenLevel by 1\fi
+        \def\next{\appendTok\parenContents#1\buildList}%
+    \fi
+    \next
+}
+\endgroup
 
-
+\def\useParenContents{\left(\the\parenContents\right)} % TODO
 
 
 
 
 %%%%%%%%%%%%%%%%%%%%
 % Examples
-
-\tracingmacros=2
-\tracingassigns=2
-\tracingcommands=2
-
-` x+(alpha)`
+\def\startTrace{\message{Starting trace...}\tracingmacros=2\tracingassigns=2\tracingcommands=2}
+\def\endTrace{\message{Ending trace...}\tracingmacros=0\tracingassigns=0\tracingcommands=0}
 
 
-\tracingmacros=0
-\tracingassigns=0
+% TODO: frac is being expanded too early...
+\def\frac{{2\over\alpha}}
+\def\fracfrac{{2^{10}\over\alpha}}
+` startTrace ((frac2)) endTrace`
 
 \bye

@@ -115,12 +115,15 @@
 % If we encounter an lbrace, then recurse on the contents of that block, then add the 
 %   results to the list and repeat.
 % Otherwise, read a block (A).
-% Drop spaces.  If the next token is NOT /, ^ or _, then 
+% Drop spaces.  
+% If the next token (B) is /, ^ or _, then drop spaces and read another block (C).  Then, 
+%    add {A}B{C} to the list.
+% Otherwise, if A contains only one token, then add it to the list and repeat.
+% Otherwise, add \left(A\right)}
+% If the If the next token is NOT /, ^ or _, then 
 %    if it's not a paren expr (ie contains only one token)
 %        then just add (A) to the end of the list and repeat;
 %    otherwise, add (A) with surrounding parens and repeat.
-% If the next token is one of those, then drop spaces and read another block (B).  Then, 
-%    add 
 % 
 % 
 
