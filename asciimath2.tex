@@ -47,8 +47,7 @@
 \def\startParse#1`{%
     %\message{Starting to lex:}
     \lexedTokens={}\lexTokens#1\end
-    %\message{The lexed tokens:}%
-    %\showthe\lexedTokens
+    \message{The lexed tokens: \the\lexedTokens@}%
     %\message{done.}%
     \mathdelim\the\lexedTokens\mathdelim
     \endgroup
@@ -179,8 +178,19 @@
     \parseCS
 }
 \def\emitCSAndLex{%
-    \edef\nextL{\the\csNameStr}
-    \expandafter\expandafter\expandafter\addBlock\expandafter\csname\nextL\endcsname\lexTokens
+    %TODO: if seq is sqrt, then just add \blockSqrt (unwrapped) and continue \lexTokens.
+    % otherwise, add it.
+    \def\tempSqrt{sqrt}%
+    \edef\scannedStr{\the\csNameStr}%
+    \ifx\tempSqrt\scannedStr
+        \def\next{\addLexed{\blockSqrt}\lexTokens}%
+    \else
+        \def\next{%
+            \expandafter\expandafter\expandafter
+                \addBlock\expandafter\csname\scannedStr\endcsname
+            \lexTokens
+        }%
+    \fi\next
     %\edef\nextL{\csname\the\csNameStr\endcsname}%
     %\expandafter\addLexed\nextL\lexTokens
 }
@@ -253,18 +263,44 @@
 \def\outputPlain#1#2{%
     \ifnum#1=0{#2}\else{{\left(#2\right)}}\fi
 }
+
+
+% New idea:
+% Have \useNextBlock\foo
+% which checks if next is \paren, and if so expands it then passes
+% the result to \foo
+% OW if it's \block,passes the interior to \foo
+%
+% Can be used by runBinOp
+% but ALSO a sqrt, root func. 
+\def\useNextBlock#1#2{
+    \ifx#2\block\def\next##1##2{#1{##2}}%
+    \else\ifx#2\startParen\def\next{%
+                                \def\useParenB{\applyToParenContents#1}%
+                                \scanParenWrap\useParenB
+                            }%
+    \else\ifx#2\blockSqrt\def\next{%
+                            \def\userC####1{#1{\sqrt{####1}}}%
+                            \useNextBlock\userC
+                            }%
+    \else\def\next{\message{Oops: ran into a non-block:\noexpand#2}\end}%
+    \fi\fi\fi
+    \next
+}
+
+\def\applyToParenContents#1{
+    \edef\todo{\noexpand#1{\the\parenContents}}%
+    \todo
+}
+
+
+
 \newtoks\tempStrB
 \newtoks\tempStrC
 
-\def\runBinOp#1\binOp#2#3{%
-    \ifx#3\block\def\next##1##2{\block0{#2{#1}{##2}}}%
-    \else\ifx#3\startParen\def\next{%
-                    \def\useParen{\parenDenom{#1}{#2}}%
-                    \scanParenWrap\useParen
-                }%
-    \else\def\next{\message{Sorry, I can't handle this type:\noexpand#3}\end}%
-    \fi\fi
-    \next
+\def\runBinOp#1\binOp#2{%
+    \def\todoBinOp##1{\block0{#2{#1}{##1}}}%
+    \useNextBlock\todoBinOp
 }
 
 \newtoks\tmpToksD
@@ -274,6 +310,9 @@
     \edef\todoC{\noexpand\block0{\noexpand#2{\the\tmpToksD}{\the\parenContents}}}%
     \todoC
 }
+
+
+\def\blockSqrt{\useNextBlock\sqrt}
 
 %% hack for now; assume denom is simple block:
 %\def\runBinOp#1\binOp#2\block0#3{%
@@ -293,6 +332,7 @@
 }
 \def\endTrace{\message{Ending trace...}\tracingmacros=0\tracingassigns=0\tracingcommands=0}
 
+% NB this doesn't handle spaces exactly the same as `...`
 \parskip=10pt
 \def\testit#1{%
     \par
@@ -338,4 +378,8 @@
 
 \testit{a^1_2}
 
+\testit{sqrt 2}
+\testit{sqrt(2+4/5)}
+\testit{2/sqrt(3alpha)}
+\testit{sqrt sqrt 3}
 \bye
