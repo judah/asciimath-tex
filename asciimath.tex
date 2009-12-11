@@ -230,12 +230,7 @@
 
 \def\readO{\let\useS=\maybeDoFraction\readS}
 \def\maybeDoFraction#1#2#3{%
-    \ifNextTokIs/{\readFraction{#3}}{%
-        \ifx0#1\def\next{{#3}}%
-        \else\def\next{{\wrapit#2{#3}}}%
-        \fi
-        \next
-    }%
+    \ifNextTokIs/{\readFraction{#3}}{\putBlock#1{#2}{#3}}%
 }
 
 % Checks whether the next token is #1.  If so, eats it and runs #2.
@@ -256,34 +251,38 @@
 \def\readS{%
     \def\useT##1##2##3{%
         \ifNextTokIs_%
-            {\doSubscript{##3}}%
+            {\doSubscript##1{##2}{##3}}%
             {\ifNextTokIs^%
-                {\doSupscript{##3}}%
+                {\doSupscript##1{##2}{##3}}%
                 {\useS##1{##2}{##3}}}%
     }
     \readT
 }
 % For now, no repeated yet.
-\def\doSubscript#1{%
+\def\doSubscript#1#2#3{%
     \def\useT##1##2##3{%
         \ifNextTokIs^%
-            {\doSubSupScript{#1}{##3}}%
-            {\useS0{}{{#1}_{##3}}}%
+            {\doSubSupScript#1{#2}{#3}{##3}}%
+            {\useS0{}{\putBlock#1{#2}{#3}_{##3}}}%
     }\readT
 }
-\def\doSupscript#1{%
+\def\doSupscript#1#2#3{%
     \def\useT##1##2##3{%
-        \useS0{}{{#1}^{##3}}%
+        \useS0{}{\putBlock#1{#2}{#3}^{##3}}%
     }\readT
 }
-\def\doSubSupScript#1#2{%
+\def\doSubSupScript#1#2#3#4{%
     \def\useT##1##2##3{%
-        \useS0{}{{#1}_{#2}^{##3}}%
+        \useS0{}{\putBlock#1{#2}{#3}_{#4}^{##3}}%
     }\readT
 }
 
 
-
+\def\putBlock#1#2#3{%
+    \ifx0#1\def\next{{#3}}%
+    \else\def\next{{\wrapit#2{#3}}}%
+    \fi\next
+}
 \def\wrapit#1#2#3{\left#1#3\right#2}
 
 % \withReadT\nextT{...} : Reads a T, sets \nextT to a macro which expands to it,
