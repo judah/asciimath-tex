@@ -47,7 +47,7 @@
 \def\startParse#1`{%
     %\message{Starting to lex:}
     \lexedTokens={}\lexTokens#1\end
-    \message{The lexed tokens: \the\lexedTokens@}%
+    %\message{The lexed tokens: \the\lexedTokens@}%
     %\message{done.}%
     \mathdelim\the\lexedTokens\mathdelim
     \endgroup
@@ -99,7 +99,7 @@
     \else\ifx#1[\def\next{\addLexed{\startParen[}\lexTokens}%
     \else\ifx#1)\def\next{\addLexed{\endParen)}\lexTokens}%
     \else\ifx#1]\def\next{\addLexed{\endParen]}\lexTokens}%
-    \else\ifx#1-\def\next{\scanMinusOrNeg}%
+    \else\ifx#1-\def\next{\addLexed{-}\lexTokens}%
     % TODO: if it's a digit (or if it's a '-' and the next token's a digit
     % then read a number and turn it into a block.
     \else
@@ -138,15 +138,6 @@
 \def\scanNumberA#1{%
     \ifisdigit\nextTok{\def\next##1{\scanNumber{#1##1}}}%
         {\def\next{\addBlock{#1}\lexTokens}}%
-    \next
-}
-
-% scanned a '-'; need to peek one more to check if this starts a negative number.
-\def\scanMinusOrNeg{\futurelet\nextTok\scanMinusOrNegA}
-\def\scanMinusOrNegA{%
-    \ifisdigit\nextTok
-        {\def\next{\scanNumber{-}}}%
-        {\def\next{\addBlock{-}\lexTokens}}%
     \next
 }
 
@@ -205,7 +196,8 @@
 % 
 % E ->  O E  | <empty>
 % O ->  S    | S / S
-% S ->  T    | T^T  | T_T   | T_T^T
+% S ->  T    | T^Tm  | T_T   | T_T^Tm
+% Tm -> T | -T
 % T -> <block> or (E) | sqrt T
 %
 % We handle the recursion by just accumulating the unexpanded inside
@@ -213,7 +205,7 @@
 % In particular, readO is NOT a recursive macro.
 %
 % Objects inside are:
-% simple binary operations /, ^ or _
+% Raw operations /,^,_,-
 % \block#1#2#3: #1 is 1 if this should be wrapped with parens when not a
 %                   subexpr of a fraction, exponent, etc., and 0 otherwise.
 %               #2 is eg "()" or "[)" if this should be wrapped
@@ -252,30 +244,37 @@
 \def\readS{%
     \def\useT##1##2##3{%
         \ifNextTokIs_%
-            {\doSubscript##1{##2}{##3}}%
+            {\doSubscript{\putBlock##1{##2}{##3}}}%
             {\ifNextTokIs^%
-                {\doSupscript##1{##2}{##3}}%
+                {\doSupscript{\putBlock##1{##2}{##3}}}%
                 {\useS##1{##2}{##3}}}%
     }
     \readT
 }
-% For now, no repeated yet.
-\def\doSubscript#1#2#3{%
+\def\doSubscript#1{%
     \def\useT##1##2##3{%
         \ifNextTokIs^%
-            {\doSubSupScript#1{#2}{#3}{##3}}%
-            {\useS0{}{\putBlock#1{#2}{#3}_{##3}}}%
+            {\doSupscript{#1_{##3}}}%
+            {\useS0{}{#1_{##3}}}%
     }\readT
 }
-\def\doSupscript#1#2#3{%
-    \def\useT##1##2##3{%
-        \useS0{}{\putBlock#1{#2}{#3}^{##3}}%
-    }\readT
+% First, read an optional minus sign.
+\def\doSupscript#1{%
+    \ifNextTokIs-%
+        {\doSupscriptA1{#1}}%
+        {\doSupscriptA0{#1}}%
 }
-\def\doSubSupScript#1#2#3#4{%
-    \def\useT##1##2##3{%
-        \useS0{}{\putBlock#1{#2}{#3}_{#4}^{##3}}%
-    }\readT
+\def\doSupscriptA#1#2{%
+    \ifx1#1% minus sign
+        \def\useT##1##2##3{%
+            \useS0{}{#2^{-\putBlock##1{##2}{##3}}}%
+        }%
+    \else
+        \def\useT##1##2##3{%
+            \useS0{}{#2^{##3}}%
+        }%
+    \fi
+    \readT
 }
 
 
