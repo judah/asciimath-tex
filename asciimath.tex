@@ -29,7 +29,12 @@
 }
 
 \catcode96=13%
-\def`{\setup\startParse}
+\def`{%
+    \setup
+    \ifNextTokIs`%
+        {\endgroup \char96\char96}%
+        {\startParse}%
+}
 \def\setup{%
     \begingroup
     \catcode32=\active

@@ -67,6 +67,10 @@
 }
 
 \testit{9+alpha}
+% The testit macro can't handle empty arguments;
+% reading an empty file produces an extra \par I guess.
+{\tt\char18\char18} becomes: ``\par\par
+{\changeSpaces\tt\char18 \char18} becomes: ` `
 \testit{ (9)}
 \testit{9+(4-(alpha))}
 \testit{9/2}
