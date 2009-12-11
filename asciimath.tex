@@ -42,12 +42,12 @@
 
 \newtoks\lexedTokens
 \def\addLexed{\appendToks\lexedTokens}
-\def\addBlock#1{\appendToks\lexedTokens{\block0{#1}}}
+\def\addBlock#1{\addLexed{\block0{}{#1}}}
 
 \def\startParse#1`{%
     %\message{Starting to lex:}
     \lexedTokens={}\lexTokens#1\end
-    %\message{The lexed tokens: \the\lexedTokens@}%
+    \message{The lexed tokens: \the\lexedTokens@}%
     %\message{done.}%
     \mathdelim\the\lexedTokens\mathdelim
     \endgroup
@@ -85,8 +85,8 @@
     % the noexpand is necessary if eg we parse an active (.
     \else\if\sspaceB\noexpand#1\let\next=\lexTokens% ignore spaces
     \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS#1}%
-    \else\ifcat\noexpand#1^\def\next{\addLexed{\binOp\Superscript}\lexTokens}%
-    \else\ifcat\noexpand#1_\def\next{\addLexed{\binOp\Subscript}\lexTokens}%
+    \else\ifcat\noexpand#1^\def\next{\addLexed{^}\lexTokens}%
+    \else\ifcat\noexpand#1_\def\next{\addLexed{_}\lexTokens}%
     \else\ifcat\noexpand#1/\def\next{\processOtherChar#1}%
     \else\def\next{\addBlock{#1}\lexTokens}%
     \fi\fi\fi\fi\fi\fi
@@ -95,22 +95,24 @@
 
 \def\processOtherChar#1{%
     \ifx#1/\let\next=\scanFracOrDiv
-    \else\ifx#1(\def\next{\addLexed{\startParen}\lexTokens}%
-    \else\ifx#1)\def\next{\addLexed{\endParen}\lexTokens}%
+    \else\ifx#1(\def\next{\addLexed{\startParen(}\lexTokens}%
+    \else\ifx#1[\def\next{\addLexed{\startParen[}\lexTokens}%
+    \else\ifx#1)\def\next{\addLexed{\endParen)}\lexTokens}%
+    \else\ifx#1]\def\next{\addLexed{\endParen]}\lexTokens}%
     \else\ifx#1-\def\next{\scanMinusOrNeg}%
     % TODO: if it's a digit (or if it's a '-' and the next token's a digit
     % then read a number and turn it into a block.
     \else
         \ifisdigit#1{\def\next{\scanNumber{#1}}}%
             {\def\next{\addBlock{#1}\lexTokens}}%
-    \fi\fi\fi\fi
+    \fi\fi\fi\fi\fi\fi
     \next
 }
 
 \def\scanFracOrDiv{\futurelet\nextTok\scanFracOrDivA}
 \def\scanFracOrDivA{%
     \ifx\nextTok/\def\next##1{\addBlock{/}\lexTokens}%
-    \else\def\next{\addLexed{\binOp\fracOp}\lexTokens}%
+    \else\def\next{\addLexed{/}\lexTokens}%
     \fi
     \next
 }
@@ -196,132 +198,104 @@
 }
 
 %%%%%%%%%%%%%%
-%% Building from blocks
+%% Parsing lexed tokens into a large structure
+%
+% Grammar is:
 % 
-% OK, the lexer's done.  First up: startParen, which just expands
-% into a \block1.
+% E ->  O E  | <empty>
+% O ->  S    | S / S
+% S ->  T    | T^T  | T_T   | T_T^T
+% T -> <block> or (E)
+%
+% We handle the recursion by just accumulating the unexpanded inside
+% and later outputting it inside of parens, \frac, etc.
+% In particular, readO is NOT a recursive macro.
+%
+% Objects inside are:
+% simple binary operations /, ^ or _
+% \block#1#2#3: #1 is 1 if this should be wrapped with parens when not a
+%                   subexpr of a fraction, exponent, etc., and 0 otherwise.
+%               #2 is eg "()" or "[)" if this should be wrapped
+%               #3 is the internals of the block.
+% \startParen#1: #1 is '(', '[', etc.
+% \endParen#1: #1 is ')', ']', etc.
+% 
+% We also provide for other macros like \blockSqrt.  When it appears, it
+% parses the upcoming block and expands into another block.
+
+% When we get to an unprocessed block, we should start the parsing process over
+% again.
+\def\block{\readO\block}
+\def\startParen{\readO\startParen}
+
+\def\readO{%
+    \def\useT##1##2##3{%
+        \ifnum##1=0{##3}\else{\wrapit##2{##3}}\fi
+    }%
+    \readT
+}
+\def\wrapit#1#2#3{\left#1#3\right#2}
+
+% Reads an "S" nonterminal and then calls \useS.
+\def\readS{%
+}
+
+% \withReadT\nextT{...} : Reads a T, sets \nextT to a macro which expands to it,
+% and runs {...}.
+%\def\withReadT#1#2{\def\useT##1{\def#1{##1}\#2}\readT}
+% Reads a "T" terminal (a lone block or a parenthesized expression)
+% and then passes it as an argument to \useT.
+\def\readT#1{%
+    \ifx#1\block\let\next=\readTBlock
+    \else\ifx#1\startParen\let\next=\readTParen
+    \else\def\next{\message{Oops: ran into a non-block:\noexpand#1}\end}%
+    \fi\fi
+    % TODO: sqrt causes us to read another T.
+    \next
+}
 
 \newtoks\parenContents
 \newcount\parenLevel
 
-
-\def\startParen{\scanParenWrap\blockedParenContents}
-\def\scanParenWrap#1{%
-    \parenLevel=0\parenContents={}\scanParenBlock#1%
+\def\readTBlock#1#2#3{\useT#1{#2}{#3}}
+\def\readTParen#1{%
+    \def\parenStarter{#1}%
+    \parenLevel=0\parenContents={}%
+    \scanParenBlock
 }
-\def\scanParenBlock#1{\def\todo{\scanParenBlockA{#1}}\futurelet\nextTok\todo}
-% Need to check for '{' b/c it's output by numbers...
-\def\scanParenBlockA#1{%
-    %\message{Checking if upcoming brace...@}
-    %\show\bgroup
-    %\show\nextTok
-    \ifx\bgroup\nextTok
-        \def\next{\scanBracedAndCont{#1}}%
-    \else\def\next{\scanParenBlockB{#1}}%
+% Need to check whether a '{' is next (e.g. lexing numbers produces it)
+\def\scanParenBlock{\futurelet\nextTok\scanParenBlockA}
+\def\scanParenBlockA{%
+    \ifx\bgroup\nextTok\let\next=\scanBraced
+    \else\let\next=\scanParenBlockB
     \fi\next
 }
-\def\scanBracedAndCont#1#2{%
-    \appendToks\parenContents{{#2}}%
-    \scanParenBlock#1%
+\def\scanBraced#1{%
+    \appendToks\parenContents{{#1}}
+    \scanParenBlock
 }
-% next is a single token, read it.
-\def\scanParenBlockB#1#2{%
-    \ifx#2\endParen
-        \ifnum\parenLevel>0%
-            \advance\parenLevel by -1%
-            \def\next{\appendToks\parenContents{#2}\scanParenBlock#1}%
-        \else\let\next=#1%
+\def\scanParenBlockB#1{%
+    \ifx#1\endParen
+        \ifnum0<\parenLevel
+            \def\next{
+                \advance\parenLevel by -1%
+                \appendToks\parenContents{\endParen}
+                \scanParenBlock
+            }%
+        \else\def\next##1{%
+                \edef\newStuff{%
+                    1{\parenStarter##1}{\the\parenContents}%
+                }%
+                \expandafter\useT\newStuff%
+            }%
         \fi
     \else
-        \ifx#2\startParen\advance\parenLevel by 1%
-        \fi
-        \appendToks\parenContents{#2}%
-        \def\next{\scanParenBlock#1}%
+        \ifx#1\startParen\advance\parenLevel by 1\fi
+        \appendToks\parenContents{#1}%
+        \let\next=\scanParenBlock
     \fi
     \next
 }
-\def\blockedParenContents{%
-    \expandafter\block\expandafter1\expandafter{\the\parenContents}%
-}
 
-% TODO: for now, don't worry about parens in denominator.
-
-% Next, block checks whether it's followed by a binOp.  If not, just output.
-% Otherwise, pass into the binOp.
-\def\block#1#2{%
-    \tempStrA={#1,#2}%
-    %\message{Outputting block [#1]: \the\tempStrA@}
-    %\ifnum#1=0{#2}\else{{\left(#2\right)}}\fi
-    \def\todo{\blockA#1{#2}}\futurelet\nextTok\todo
-}
-\def\blockA#1#2{%
-    \ifx\nextTok\binOp\def\next{\runBinOp{#2}}%
-    \else\def\next{\outputPlain#1{#2}}%
-    \fi
-    \next
-}
-\def\outputPlain#1#2{%
-    \ifnum#1=0{#2}\else{{\left(#2\right)}}\fi
-}
-
-
-% New idea:
-% Have \useNextBlock\foo
-% which checks if next is \paren, and if so expands it then passes
-% the result to \foo
-% OW if it's \block,passes the interior to \foo
-%
-% Can be used by runBinOp
-% but ALSO a sqrt, root func. 
-\def\useNextBlock#1#2{
-    \ifx#2\block\def\next##1##2{#1{##2}}%
-    \else\ifx#2\startParen\def\next{%
-                                \def\useParenB{\applyToParenContents#1}%
-                                \scanParenWrap\useParenB
-                            }%
-    \else\ifx#2\blockSqrt\def\next{%
-                            \def\userC####1{#1{\sqrt{####1}}}%
-                            \useNextBlock\userC
-                            }%
-    \else\def\next{\message{Oops: ran into a non-block:\noexpand#2}\end}%
-    \fi\fi\fi
-    \next
-}
-
-\def\applyToParenContents#1{
-    \edef\todo{\noexpand#1{\the\parenContents}}%
-    \todo
-}
-
-
-
-\newtoks\tempStrB
-\newtoks\tempStrC
-
-\def\runBinOp#1\binOp#2{%
-    \def\todoBinOp##1{\block0{#2{#1}{##1}}}%
-    \useNextBlock\todoBinOp
-}
-
-\newtoks\tmpToksD
-\def\parenDenom#1#2{%
-    %\message{In parenDenom: just parsed: \the\parenContents}%
-    \tmpToksD={#1}
-    \edef\todoC{\noexpand\block0{\noexpand#2{\the\tmpToksD}{\the\parenContents}}}%
-    \todoC
-}
-
-
-\def\blockSqrt{\useNextBlock\sqrt}
-
-%% hack for now; assume denom is simple block:
-%\def\runBinOp#1\binOp#2\block0#3{%
-%    \tempStrB={#1,#2,#3}
-%    \message{RunBinOp:\the\tempStrB@}
-%    #2{#1}{#3}%
-%}
-
-% For testing:
-\def\binOp#1{\message{binOp: Something went wrong...\noexpand#1@}}
 
 

@@ -29,7 +29,7 @@
 \def\testit{\begingroup\changeSpaces\testitA}
 \def\testitA#1{%
     \tempStrA={#1}%
-    %\message{testitA:\the\tempStrA@}%
+    \message{testitA:\the\tempStrA@}%
     \par
     {\tt\char18\replaceSuperSubScript#1\end\char18}%
     \writeTempStrAToFile
@@ -66,10 +66,12 @@
     \next
 }
 
-%\startTrace
+\testit{9+alpha}
+\startTrace
 \testit{ (9)}
-%\endTrace
-%\bye
+\bye
+\testit{9+(4-(alpha))}
+\endTrace
 \testit{(9^-74)}
 
 \testit{3^2}
@@ -103,5 +105,7 @@
 \testit{sqrt(2+4/5)}
 \testit{2/sqrt(3alpha)}
 \testit{sqrt sqrt 3}
+
+\testit{[2,3]/7}
 \bye
 
