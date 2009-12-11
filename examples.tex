@@ -67,40 +67,42 @@
 }
 
 \testit{9+alpha}
-\startTrace
 \testit{ (9)}
 \testit{9+(4-(alpha))}
 \testit{9/2}
-\endTrace
-%\testit{(9^-74)}
 
-%\testit{3^2}
+\testit{5^14}
+\testit{5_14}
+\testit{(9^-74)}
 % TODO: test for space elimination.
 % In particular, without the testit macro
 % which I don't trust to completely eliminate spaces.
-%\testit{ 125^-74}
+\testit{ 125^-74}
 % TODO: This should parse as 1/(125^74)
-%\testit{1/125^74}
-%\testit{(1/125)^74}
+\testit{1/125^74}
+\testit{(1/125)^74}
 \testit{1-a}
 
 % TODO: way for explicit spaces
 % (maybe just "\ "?)
 \testit{1 234}
 
-\testit{(1//2)/(7//4)}
+\testit{(1//2]/(7//4)}
 \testit{(9)/(7)}
 
 \testit{ 2/3 + ((alpha+2)/2 * 5)/7}
 
 \testit{2/3/3}
 
+\testit{[2,3)}
+
 \testit{z/((q*(2/beta to gamma)))}
 
-\bye
 \testit{alpha^(2+3)/5}
 
-\testit{a^1_2}
+\testit{a_1^2}
+
+\testit{sum_(n=1)^infty 1/n^2}
 
 \testit{sqrt 2}
 \testit{sqrt(2+4/5)}

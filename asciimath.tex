@@ -229,20 +229,25 @@
 \def\startParen{\readO\startParen}
 
 \def\readO{\let\useS=\maybeDoFraction\readS}
-\def\maybeDoFraction#1#2#3{
-    \def\todo{%
-        \ifx\nextTok/\def\next{\readFraction{#3}}%
-        \else\ifx0#1\def\next{{#3}}%
+\def\maybeDoFraction#1#2#3{%
+    \ifNextTokIs/{\readFraction{#3}}{%
+        \ifx0#1\def\next{{#3}}%
         \else\def\next{{\wrapit#2{#3}}}%
-        \fi\fi
+        \fi
         \next
     }%
+}
+
+% Checks whether the next token is #1.  If so, eats it and runs #2.
+% Otherwise, leaves it alone and runs #3.
+\def\ifNextTokIs#1#2#3{%
+    \def\todo{\ifx#1\nextTok\def\next####1{#2}\else\def\next{#3}\fi\next}%
     \futurelet\nextTok\todo
 }
+        
 % Given the numerator to a fraction (#1)
-% where #2 is the peeked "/"
 % parses the next S and returns the resulting fraction.
-\def\readFraction#1#2{
+\def\readFraction#1{%
     \def\useS##1##2##3{\fracOp{#1}{##3}}%
     \readS
 }
@@ -250,13 +255,34 @@
 % Reads an S nonterminal and passes the result to useS.
 \def\readS{%
     \def\useT##1##2##3{%
-        % For now, just pass along to useS.
-        % Later, remove wrapping as needed.
-        \useS##1{##2}{##3}%
-    }%
+        \ifNextTokIs_%
+            {\doSubscript{##3}}%
+            {\ifNextTokIs^%
+                {\doSupscript{##3}}%
+                {\useS##1{##2}{##3}}}%
+    }
     \readT
 }
-    
+% For now, no repeated yet.
+\def\doSubscript#1{%
+    \def\useT##1##2##3{%
+        \ifNextTokIs^%
+            {\doSubSupScript{#1}{##3}}%
+            {\useS0{}{{#1}_{##3}}}%
+    }\readT
+}
+\def\doSupscript#1{%
+    \def\useT##1##2##3{%
+        \useS0{}{{#1}^{##3}}%
+    }\readT
+}
+\def\doSubSupScript#1#2{%
+    \def\useT##1##2##3{%
+        \useS0{}{{#1}_{#2}^{##3}}%
+    }\readT
+}
+
+
 
 \def\wrapit#1#2#3{\left#1#3\right#2}
 
