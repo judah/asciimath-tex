@@ -1,4 +1,8 @@
-\input asciimath.tex
+\documentclass{article}
+\usepackage{asciimth}
+
+\begin{document}
+
 %%%%%%%%%%%%%%%%%%%%
 % Examples
 \def\startTrace{\message{Starting trace...@}%
@@ -30,7 +34,6 @@
 \def\testitA#1{%
     \tempStrA={#1}%
     \message{testitA:\the\tempStrA@}%
-    \par
     {\tt\char18\replaceSuperSubScript#1\end\char18}%
     \writeTempStrAToFile
     \endgroup
@@ -70,10 +73,12 @@
 % The testit macro can't handle empty arguments;
 % reading an empty file produces an extra \par I guess.
 {\tt\char18\char18} becomes: ``\par\par
-{\changeSpaces\tt\char18 \char18} becomes: ` `
+{\changeSpaces\tt\char18 \char18} becomes: ` ` \par\par
 \testit{ (9)}
 \testit{9+(4-(alpha))}
 \testit{9/2}
+
+\testit{t}
 
 \testit{5^14}
 \testit{5_14}
@@ -123,5 +128,6 @@
 \testit{(2+3)/sqrt sqrt sqrt 3}
 
 \testit{([2/3])/7}
-\bye
 
+
+\end{document}

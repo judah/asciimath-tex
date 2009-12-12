@@ -17,8 +17,6 @@
 % and do \plainSqrt{...}.
  
 
-\newlinechar=`@
-
 % OK, change: need  to fully lex into a token register before outputting.
 \newtoks\tempStrA
 \def\appendToks#1#2{%
@@ -49,9 +47,12 @@
 \def\addLexed{\appendToks\lexedTokens}
 \def\addBlock#1{\addLexed{\block0{}{#1}}}
 
+% TODO: what's the right thing to do here?
+% LaTeX redefines \end so I can't use it here...but startParse seems like a poor
+% choice.
 \def\startParse#1`{%
     %\message{Starting to lex:}
-    \lexedTokens={}\lexTokens#1\end
+    \lexedTokens={}\lexTokens#1\startParse
     %\message{The lexed tokens: \the\lexedTokens@}%
     %\message{done.}%
     \mathdelim\the\lexedTokens\mathdelim
@@ -80,7 +81,8 @@
 % Idea: temp turn them into active chars.
 % (eventually might actually want this...)
 \gdef\lexTokens#1{%
-    \ifx#1\end\let\next=\relax
+    % ???? TODO ????
+    \ifx#1\startParse\let\next=\relax
     %\message{About to test spaces...first is:}
     %\show#1%
     %\message{And second is:}
@@ -161,13 +163,13 @@
 \newtoks\csNameStr
 \def\parseLetterOrCS#1{%
     % First check whether the next unparsed token is a letter.
-    \def\todo{\ifcat\nextTok a\def\next{\csNameStr={#1}\parseCS}%
+    \def\todo{\ifcat\noexpand\nextTok a\def\next{\csNameStr={#1}\parseCS}%
                 \else\def\next{\addBlock#1\lexTokens}\fi\next}%
     \futurelet\nextTok\todo
 }
 \def\parseCS{\futurelet\nextTok\parseCSa}
 \def\parseCSa{%
-    \ifcat\nextTok a\def\next{\addToCSAndCont}%
+    \ifcat\noexpand\nextTok a\def\next{\addToCSAndCont}%
     \else\def\next{\emitCSAndLex}%
     \fi\next
 }
@@ -358,6 +360,3 @@
     \fi
     \next
 }
-
-
-
