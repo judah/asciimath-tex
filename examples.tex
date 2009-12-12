@@ -23,14 +23,18 @@
     \exampleRow{\replaceSuperSubScript#1\end}{`#1`}%
 }
     
-% TODO: better formatting of math (displaymath, more vert margings)
-\def\mathcell#1{#1}
-%\def\mathcell#1{\begin{minipage}{3cm}$$#1$$\end{minipage}}
-%\def\mathcell#1{$\displaystyle #1$}
 \def\exampleRow#1#2{%
     {\tt\char18#1\char18}%
     %& #2\tabularnewline%
     & \mathcell{#2}\tabularnewline
+}
+
+% This is a little bit of a hack, but it was the easiest way I could
+% figure out to get the math looking pretty inside of a table cell.
+\def\mathcell#1{{
+    \fboxrule=0pt
+    \fbox{$\displaystyle #1$}%
+    }%
 }
 
 % We can't just set the catcodes of ^ and _ because we want them as letters
