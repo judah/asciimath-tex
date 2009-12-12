@@ -198,6 +198,7 @@
 \def\defineTokTypes@{%
     \def\block{\readO@\block}%
     \def\startParen{\readO@\startParen}%
+    \def\endParen##1{\message{Oops; found an unmatched "##1".}\end}%
     \def\sqrtT{\readO@\sqrtT}%
 }
 
