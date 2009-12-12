@@ -29,7 +29,7 @@
 \def`{%
     \setupASCII@
     \ifNextTokIs@`%
-        {\endgroup \char96\char96}%
+        {\endgroup\char96\char96}%
         {\startParse@}%
 }
 \def\setupASCII@{%
@@ -73,7 +73,7 @@
 % TODO handle braces correctly
 % Idea: temp turn them into active chars.
 % (eventually might actually want this...)
-\gdef\lexTokens@#1{%
+\def\lexTokens@#1{%
     % ???? TODO ????
     \ifx#1\startParse@\let\next=\relax
     %\message{About to test spaces...first is:}
