@@ -1,6 +1,7 @@
 \NeedsTeXFormat{LaTeX2e}[1994/12/01]
 \ProvidesPackage{asciimth}[2009/12/11 v0.1 ASCIIMath support for LaTeX]
 
+\makeatletter
 
 % OK, new idea:
 % Step 1: do a ``lexer'' pass on the list which tokenizes sequences of letters and
@@ -21,23 +22,19 @@
 % and do \plainSqrt{...}.
  
 
-% OK, change: need  to fully lex into a token register before outputting.
-\newtoks\tempStrA
-\def\appendToks#1#2{%
-    \tempStrA={#2}%
-%    \message{Appending to \noexpand#1: [\the#1] plus [\the\tempStrA]@}
-    \edef\tmpA{\the#1\the\tempStrA}%
-    #1=\expandafter{\tmpA}%
+\def\appendToks@#1#2{%
+    \edef\tmpA{\the#1}%
+    #1=\expandafter{\tmpA#2}%
 }
 
 \catcode96=13%
 \def`{%
-    \setup
-    \ifNextTokIs`%
+    \setupASCII@
+    \ifNextTokIs@`%
         {\endgroup \char96\char96}%
-        {\startParse}%
+        {\startParse@}%
 }
-\def\setup{%
+\def\setupASCII@{%
     \begingroup
     \catcode32=\active
     \def\sspace{ }% Do it here so the inside space is lexed as active
@@ -45,21 +42,19 @@
     % def ^,_,/ and (
     % def sqrt et al
     %\defParenCmds
+    \defineTokTypes@
 }
 
-\newtoks\lexedTokens
-\def\addLexed{\appendToks\lexedTokens}
-\def\addBlock#1{\addLexed{\block0{}{#1}}}
+\newtoks\lexedTokens@
+\def\addLexed@{\appendToks@\lexedTokens@}
+\def\addBlock@#1{\addLexed@{\block0{}{#1}}}
 
 % TODO: what's the right thing to do here?
 % LaTeX redefines \end so I can't use it here...but startParse seems like a poor
 % choice.
-\def\startParse#1`{%
-    %\message{Starting to lex:}
-    \lexedTokens={}\lexTokens#1\startParse
-    %\message{The lexed tokens: \the\lexedTokens@}%
-    %\message{done.}%
-    \mathdelim\the\lexedTokens\mathdelim
+\def\startParse@#1`{%
+    \lexedTokens@={}\lexTokens@#1\startParse@
+    \mathdelim\the\lexedTokens@\mathdelim
     \endgroup
 }
 
@@ -74,19 +69,15 @@
 \begingroup
 \catcode32=13
 %\catcode40=13
-\gdef\sspaceB{ }
-\gdef\sparenB{(}
-\catcode32=10
+\gdef\sspace@{ }
 \endgroup
-
-
 
 % TODO handle braces correctly
 % Idea: temp turn them into active chars.
 % (eventually might actually want this...)
-\gdef\lexTokens#1{%
+\gdef\lexTokens@#1{%
     % ???? TODO ????
-    \ifx#1\startParse\let\next=\relax
+    \ifx#1\startParse@\let\next=\relax
     %\message{About to test spaces...first is:}
     %\show#1%
     %\message{And second is:}
@@ -94,110 +85,94 @@
     %\message{So there.}
     %\if\sspaceB\noexpand#1\message{YESYES}\else\message{NONO}\fi
     % the noexpand is necessary if eg we parse an active (.
-    \else\if\sspaceB\noexpand#1\let\next=\lexTokens% ignore spaces
-    \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS#1}%
-    \else\ifcat\noexpand#1^\def\next{\addLexed{^}\lexTokens}%
-    \else\ifcat\noexpand#1_\def\next{\addLexed{_}\lexTokens}%
-    \else\ifcat\noexpand#1/\def\next{\processOtherChar#1}%
-    \else\def\next{\addBlock{#1}\lexTokens}%
+    \else\if\sspace@\noexpand#1\let\next=\lexTokens@% ignore spaces
+    \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS@#1}%
+    \else\ifcat\noexpand#1^\def\next{\addLexed@{^}\lexTokens@}%
+    \else\ifcat\noexpand#1_\def\next{\addLexed@{_}\lexTokens@}%
+    \else\ifcat\noexpand#1/\def\next{\processOtherChar@#1}%
+    \else\def\next{\addBlock@{#1}\lexTokens@}%
     \fi\fi\fi\fi\fi\fi
     \next
 }%
 
-\def\processOtherChar#1{%
-    \ifx#1/\let\next=\scanFracOrDiv
-    \else\ifx#1(\def\next{\addLexed{\startParen(}\lexTokens}%
-    \else\ifx#1[\def\next{\addLexed{\startParen[}\lexTokens}%
-    \else\ifx#1)\def\next{\addLexed{\endParen)}\lexTokens}%
-    \else\ifx#1]\def\next{\addLexed{\endParen]}\lexTokens}%
-    \else\ifx#1-\def\next{\addLexed{-}\lexTokens}%
+\def\processOtherChar@#1{%
+    \ifx#1/\let\next=\scanFracOrDiv@
+    \else\ifx#1(\def\next{\addLexed@{\startParen(}\lexTokens@}%
+    \else\ifx#1[\def\next{\addLexed@{\startParen[}\lexTokens@}%
+    \else\ifx#1)\def\next{\addLexed@{\endParen)}\lexTokens@}%
+    \else\ifx#1]\def\next{\addLexed@{\endParen]}\lexTokens@}%
+    \else\ifx#1-\def\next{\addLexed@{-}\lexTokens@}%
     % TODO: if it's a digit (or if it's a '-' and the next token's a digit
     % then read a number and turn it into a block.
     \else
-        \ifisdigit#1{\def\next{\scanNumber{#1}}}%
-            {\def\next{\addBlock{#1}\lexTokens}}%
+        \ifisdigitchar@#1{\def\next{\scanNumber@{#1}}}%
+            {\def\next{\addBlock@{#1}\lexTokens@}}%
     \fi\fi\fi\fi\fi\fi
     \next
 }
 
-\def\scanFracOrDiv{\futurelet\nextTok\scanFracOrDivA}
-\def\scanFracOrDivA{%
-    \ifx\nextTok/\def\next##1{\addBlock{/}\lexTokens}%
-    \else\def\next{\addLexed{/}\lexTokens}%
+\def\scanFracOrDiv@{\futurelet\nextTok\scanFracOrDivA@}
+\def\scanFracOrDivA@{%
+    \ifx\nextTok/\def\next##1{\addBlock@{/}\lexTokens@}%
+    \else\def\next{\addLexed@{/}\lexTokens@}%
     \fi
     \next
 }
 
 % There must be a more efficient way to do this...
-\newif\ifisDigitCond
-\def\ifisdigit#1#2#3{%
-    \isDigitCondfalse
-    \ifx0#1\isDigitCondtrue\fi
-    \ifx1#1\isDigitCondtrue\fi
-    \ifx2#1\isDigitCondtrue\fi
-    \ifx3#1\isDigitCondtrue\fi
-    \ifx4#1\isDigitCondtrue\fi
-    \ifx5#1\isDigitCondtrue\fi
-    \ifx6#1\isDigitCondtrue\fi
-    \ifx7#1\isDigitCondtrue\fi
-    \ifx8#1\isDigitCondtrue\fi
-    \ifx9#1\isDigitCondtrue\fi
-    \ifisDigitCond#2\else#3\fi
+\newif\ifisDigitCharCond@
+\def\ifisdigitchar@#1#2#3{%
+    \isDigitCharCond@false
+    \ifx0#1\isDigitCharCond@true\fi
+    \ifx1#1\isDigitCharCond@true\fi
+    \ifx2#1\isDigitCharCond@true\fi
+    \ifx3#1\isDigitCharCond@true\fi
+    \ifx4#1\isDigitCharCond@true\fi
+    \ifx5#1\isDigitCharCond@true\fi
+    \ifx6#1\isDigitCharCond@true\fi
+    \ifx7#1\isDigitCharCond@true\fi
+    \ifx8#1\isDigitCharCond@true\fi
+    \ifx9#1\isDigitCharCond@true\fi
+    \ifisDigitCharCond@#2\else#3\fi
 }
 
-\def\scanNumber#1{\def\todo{\scanNumberA{#1}}\futurelet\nextTok\todo}
-\def\scanNumberA#1{%
-    \ifisdigit\nextTok{\def\next##1{\scanNumber{#1##1}}}%
-        {\def\next{\addBlock{#1}\lexTokens}}%
+\def\scanNumber@#1{\def\todo{\scanNumberA@{#1}}\futurelet\nextTok\todo}
+\def\scanNumberA@#1{%
+    \ifisdigitchar@\nextTok{\def\next##1{\scanNumber@{#1##1}}}%
+        {\def\next{\addBlock@{#1}\lexTokens@}}%
     \next
 }
 
-%%%%%%%%%%%
-% binary operations
-\def\fracOp#1#2{%
-    {#1\over#2}%
-}
-\def\Superscript#1#2{%
-    {#1}^{#2}%
-}
-\def\Subscript#1#2{%
-    {#1}_{#2}%
-}
-
-\newtoks\csNameStr
-\def\parseLetterOrCS#1{%
+\newtoks\csNameStr@
+\def\parseLetterOrCS@#1{%
     % First check whether the next unparsed token is a letter.
-    \def\todo{\ifcat\noexpand\nextTok a\def\next{\csNameStr={#1}\parseCS}%
-                \else\def\next{\addBlock#1\lexTokens}\fi\next}%
+    \def\todo{\ifcat\noexpand\nextTok a\def\next{\csNameStr@={#1}\parseCS@}%
+                \else\def\next{\addBlock@#1\lexTokens@}\fi\next}%
     \futurelet\nextTok\todo
 }
-\def\parseCS{\futurelet\nextTok\parseCSa}
-\def\parseCSa{%
-    \ifcat\noexpand\nextTok a\def\next{\addToCSAndCont}%
-    \else\def\next{\emitCSAndLex}%
+\def\parseCS@{\futurelet\nextTok\parseCSa@}
+\def\parseCSa@{%
+    \ifcat\noexpand\nextTok a\let\next=\addToCSAndCont@%
+    \else\let\next=\emitCSAndLex@%
     \fi\next
 }
-\def\addToCSAndCont#1{%
-    \appendToks\csNameStr#1%\edef\next{\noexpand\csNameStr={\the\csNameStr#1}}%
-    \parseCS
+\def\addToCSAndCont@#1{%
+    \appendToks@\csNameStr@#1%
+    \parseCS@
 }
 
-\def\sqrtString{sqrt}%
-\def\emitCSAndLex{%
-    %TODO: if seq is sqrt, then just add \blockSqrt (unwrapped) and continue \lexTokens.
-    % otherwise, add it.
-    \edef\scannedStr{\the\csNameStr}%
-    \ifx\sqrtString\scannedStr
-        \def\next{\addLexed{\sqrtT}\lexTokens}%
+\def\sqrtString@{sqrt}%
+\def\emitCSAndLex@{%
+    \edef\scannedStr{\the\csNameStr@}%
+    \ifx\sqrtString@\scannedStr
+        \def\next{\addLexed@{\sqrtT}\lexTokens@}%
     \else
         \def\next{%
             \expandafter\expandafter\expandafter
-                \addBlock\expandafter\csname\scannedStr\endcsname
-            \lexTokens
+                \addBlock@\expandafter\csname\scannedStr\endcsname
+            \lexTokens@
         }%
     \fi\next
-    %\edef\nextL{\csname\the\csNameStr\endcsname}%
-    %\expandafter\addLexed\nextL\lexTokens
 }
 
 %%%%%%%%%%%%%%
@@ -229,17 +204,21 @@
 
 % When we get to an unprocessed block, we should start the parsing process over
 % again.
-\def\block{\readO\block}
-\def\startParen{\readO\startParen}
+\def\defineTokTypes@{%
+    \def\block{\readO\block}%
+    \def\startParen{\readO\startParen}%
+    \def\sqrtT{\readO\sqrtT}%
+}
+
 
 \def\readO{\let\useS=\maybeDoFraction\readS}
 \def\maybeDoFraction#1#2#3{%
-    \ifNextTokIs/{\readFraction{#3}}{\putBlock#1{#2}{#3}}%
+    \ifNextTokIs@/{\readFraction{#3}}{\putBlock#1{#2}{#3}}%
 }
 
 % Checks whether the next token is #1.  If so, eats it and runs #2.
 % Otherwise, leaves it alone and runs #3.
-\def\ifNextTokIs#1#2#3{%
+\def\ifNextTokIs@#1#2#3{%
     \def\todo{\ifx#1\nextTok\def\next####1{#2}\else\def\next{#3}\fi\next}%
     \futurelet\nextTok\todo
 }
@@ -247,16 +226,16 @@
 % Given the numerator to a fraction (#1)
 % parses the next S and returns the resulting fraction.
 \def\readFraction#1{%
-    \def\useS##1##2##3{\fracOp{#1}{##3}}%
+    \def\useS##1##2##3{{#1\over##3}}%
     \readS
 }
 
 % Reads an S nonterminal and passes the result to useS.
 \def\readS{%
     \def\useT##1##2##3{%
-        \ifNextTokIs_%
+        \ifNextTokIs@_%
             {\doSubscript{\putBlock##1{##2}{##3}}}%
-            {\ifNextTokIs^%
+            {\ifNextTokIs@^%
                 {\doSupscript{\putBlock##1{##2}{##3}}}%
                 {\useS##1{##2}{##3}}}%
     }
@@ -264,14 +243,14 @@
 }
 \def\doSubscript#1{%
     \def\useT##1##2##3{%
-        \ifNextTokIs^%
+        \ifNextTokIs@^%
             {\doSupscript{#1_{##3}}}%
             {\useS0{}{#1_{##3}}}%
     }\readT
 }
 % First, read an optional minus sign.
 \def\doSupscript#1{%
-    \ifNextTokIs-%
+    \ifNextTokIs@-%
         {\doSupscriptA1{#1}}%
         {\doSupscriptA0{#1}}%
 }
@@ -308,8 +287,6 @@
     \next
 }
 
-\def\sqrtT{\readO\sqrtT}
-
 % OK, this is a little tricky b/c we need to keep the old version of useT.
 \def\readSqrtT{
     \bgroup
@@ -339,7 +316,7 @@
     \fi\next
 }
 \def\scanBraced#1{%
-    \appendToks\parenContents{{#1}}
+    \appendToks@\parenContents{{#1}}
     \scanParenBlock
 }
 \def\scanParenBlockB#1{%
@@ -347,7 +324,7 @@
         \ifnum0<\parenLevel
             \def\next{
                 \advance\parenLevel by -1%
-                \appendToks\parenContents{\endParen}
+                \appendToks@\parenContents{\endParen}
                 \scanParenBlock
             }%
         \else\def\next##1{%
@@ -359,8 +336,11 @@
         \fi
     \else
         \ifx#1\startParen\advance\parenLevel by 1\fi
-        \appendToks\parenContents{#1}%
+        \appendToks@\parenContents{#1}%
         \let\next=\scanParenBlock
     \fi
     \next
 }
+
+
+\makeatother
