@@ -230,7 +230,7 @@
             {\ifNextTokIs@^%
                 {\doSupscript@{\putBlock@##1{##2}{##3}}}%
                 {\useS##1{##2}{##3}}}%
-    }
+    }%
     \readT@
 }
 \def\doSubscript@#1{%
@@ -281,7 +281,7 @@
 }
 
 % OK, this is a little tricky b/c we need to keep the old version of useT.
-\def\readSqrtT@{
+\def\readSqrtT@{%
     \bgroup
     \def\useT##1##2##3{%
         \egroup
@@ -309,15 +309,15 @@
     \fi\next
 }
 \def\scanBraced@#1{%
-    \appendToks@\parenContents@{{#1}}
+    \appendToks@\parenContents@{{#1}}%
     \scanParenBlock@
 }
 \def\scanParenBlockB@#1{%
     \ifx#1\endParen
         \ifnum0<\parenLevel@
-            \def\next{
+            \def\next{%
                 \advance\parenLevel@ by -1%
-                \appendToks@\parenContents@{\endParen}
+                \appendToks@\parenContents@{\endParen}%
                 \scanParenBlock@
             }%
         \else\def\next##1{%
