@@ -76,13 +76,6 @@
 \def\lexTokens@#1{%
     % ???? TODO ????
     \ifx#1\startParse@\let\next=\relax
-    %\message{About to test spaces...first is:}
-    %\show#1%
-    %\message{And second is:}
-    %\show\sspaceB
-    %\message{So there.}
-    %\if\sspaceB\noexpand#1\message{YESYES}\else\message{NONO}\fi
-    % the noexpand is necessary if eg we parse an active (.
     \else\if\sspace@\noexpand#1\let\next=\lexTokens@% ignore spaces
     \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS@#1}%
     \else\ifcat\noexpand#1^\def\next{\addLexed@{^}\lexTokens@}%
