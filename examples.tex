@@ -1,67 +1,42 @@
 \documentclass{article}
 \usepackage{asciimth}
+\usepackage{amsmath}
 
-\begin{document}
-
-%%%%%%%%%%%%%%%%%%%%
-% Examples
 \def\startTrace{\message{Starting trace...@}%
     \tracingmacros=2\tracingassigns=2\tracingcommands=2%
 }
 \def\endTrace{\message{Ending trace...@}\tracingmacros=0\tracingassigns=0\tracingcommands=0}
 
-\parskip=10pt
-
-% NB this doesn't handle spaces exactly the same as `...`
-% New plan:
-% - start group, obey spaces
-% - read brace-surrounded arg.
-% - endgroup
-% - write it to a file.
-% - print it out in tt, with super/subscripts replaced.
-% - read in from the file
-% - pass to `...`
+% OK, note this doesn't really test spaces well.
 \begingroup
 \catcode32=13%
 \gdef\changeSpaces{%
-    \catcode32=13%
-    \let =\ %
+\catcode32=13%
+\let =\ %
 }
 \endgroup
+\def\changeSpacesBack{\catcode32=10}
 
-
-\newtoks\tempStrA
-\def\testit{\begingroup\changeSpaces\testitA}
-\def\testitA#1{%
-    \tempStrA={#1}%
-    \message{testitA:\the\tempStrA@}%
-    {\tt\char18\replaceSuperSubScript#1\end\char18}%
-    \writeTempStrAToFile
-    \endgroup
-    \ becomes:
-    \runFileRead
-    \par\par
+\def\testRow{\hline\changeSpaces\testRowA}
+\def\testRowA#1{%
+    \changeSpacesBack
+    \exampleRow{\replaceSuperSubScript#1\end}{`#1`}%
 }
-\newwrite\outfile
-\def\writeTempStrAToFile{%
-    \immediate\openout\outfile=temp%
-    \immediate\write\outfile{\the\tempStrA}%
-    \immediate\closeout\outfile
-}
-\def\runFileRead{%
-    \immediate\openin\outfile=temp%
-    \immediate\read\outfile to \tempStr
-    \expandafter`\tempStr`
+    
+% TODO: better formatting of math (displaymath, more vert margings)
+\def\mathcell#1{#1}
+%\def\mathcell#1{\begin{minipage}{3cm}$$#1$$\end{minipage}}
+%\def\mathcell#1{$\displaystyle #1$}
+\def\exampleRow#1#2{%
+    {\tt\char18#1\char18}%
+    %& #2\tabularnewline%
+    & \mathcell{#2}\tabularnewline
 }
 
-
-% Hard to just set the catcodes because we want the ^ as letters in the \tt, and
-% as superscripts in the `...`. 
+% We can't just set the catcodes of ^ and _ because we want them as letters
+% in the \tt but as super/subscripts in the `...`.
 \def\replaceSuperSubScript{\futurelet\nextTok\replaceSuperSubScriptA}
 \def\replaceSuperSubScriptA#1{%
-    %\message{Next token:@}%
-    %\show\nextTok
-    %\show#1%
     \ifx#1\end\let\next=\relax
     \else\ifx#1^\def\next{\char94\replaceSuperSubScript}%
     \else\ifx#1_\def\next{\char95\replaceSuperSubScript}%
@@ -70,65 +45,75 @@
     \next
 }
 
-\testit{9+alpha}
-% The testit macro can't handle empty arguments;
-% reading an empty file produces an extra \par I guess.
-{\tt\char18\char18} becomes: ``\par\par
-{\changeSpaces\tt\char18 \char18} becomes: ` ` \par\par
-\testit{ (9)}
-\testit{9+(4-(alpha))}
-\testit{9/2}
+\def\rawExampleRow{\hline\changeSpaces\readFirstPart}
+\def\readFirstPart#1{\changeSpacesBack\exampleRow{#1}}
 
-\testit{t}
+\parskip=10pt
 
-\testit{5^14}
-\testit{5_14}
-\testit{(9^-74)}
-% TODO: test for space elimination.
-% In particular, without the testit macro
-% which I don't trust to completely eliminate spaces.
-\testit{ 125^-74}
-% TODO: This should parse as 1/(125^74)
-\testit{1/125^74}
-\testit{(1/125)^74}
-\testit{1-a}
+\newenvironment{examples}[1]
+    {\renewcommand{\arraystretch}{1.5}
+    \renewcommand{\tabcolsep}{0.2cm}
+    \begin{tabular}{|p{6cm}|p{3cm}|}
+        \multicolumn{2}{c}{\textbf{#1}}\\}
+    {\hline\end{tabular}}
 
-% TODO: way for explicit spaces
-% (maybe just "\ "?)
-\testit{1 234}
 
-\testit{(1//2]/(7//4)}
-\testit{(9)/(7)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\testit{ 2/3 + ((alpha+2)/2 * 5)/7}
+\begin{document}
 
-\testit{2/3/3}
-\testit{-5/zeta}
-
-\testit{[2,3)}
-
-\testit{z/((q*(2/beta to gamma)))}
-
-\testit{alpha^(2+3)/5}
-
-\testit{x^n y_1^-t alpha^-(beta-z)}
-\testit{(q r s)_(123)^-[456/z]}
-
-\testit{a_1^2}
-
-\testit{(a+b)_(k_1)^(x+2)}
-
-\testit{sum_(n=1)^infty 1/n^2}
-\testit{int_pi^infty 1/(sin x)^2 d x}
+This document displays a list of examples of equations typeset with the
+{\tt asciimth} package.  It serves both as documentation and as a test of all of
+the features in the package.
 
 \startTrace
-\testit{sqrt 2}
-\testit{sqrt(2+4/5)}
-\testit{2/sqrt(3alpha)}
-\testit{sqrt sqrt 3}
-\testit{(2+3)/sqrt sqrt sqrt 3}
+\begin{examples}{Simple commands}
+\testRow{9+alpha}
+\testRow{ (9)}
+\testRow{9+(4-(alpha))}
+\testRow{gamma>2 implies gamma*gamma>4}
+\testRow{x ge 0 implies x x ge 0}
+\testRow{t}
+\testRow{1-a}
+\testRow{1 234}
+\testRow{[2,3)}
+\rawExampleRow{}{``}
+\rawExampleRow{ }{` `}
+\end{examples}
 
-\testit{([2/3])/7}
+\begin{examples}{Fractions}
+\testRow{9/2}
+\testRow{(1//2]/(7//4)}
+\testRow{(9)/(7)}
+\testRow{ 2/3 + ((alpha+2)/2 * 5)/7}
+\testRow{2/3/3}
+\testRow{-5/zeta}
+\testRow{z/((q*(2/beta to gamma)))}
+\testRow{([2/3])/7}
+\end{examples}
 
+\begin{examples}{Exponents and subscripts}
+\testRow{5^14}
+\testRow{5_14}
+\testRow{(9^-74)}
+\testRow{ 125^-74}
+\testRow{1/125^74}
+\testRow{(1/125)^74}
+\testRow{alpha^(2+3)/5}
+\testRow{x^n y_1^-t alpha^-(beta-z)}
+\testRow{(q r s)_(123)^-[456/z]}
+\testRow{a_1^2}
+\testRow{(a+b)_(k_1)^(x+2)}
+\testRow{sum_(n=1)^infty 1/n^2}
+\testRow{int_pi^infty 1/(sin x)^2 d x}
+\end{examples}
+
+\begin{examples}{Square roots}
+\testRow{sqrt 2}
+\testRow{sqrt(2+4/5)}
+\testRow{2/sqrt(3alpha)}
+\testRow{sqrt sqrt 3}
+\testRow{(2+3)/sqrt sqrt sqrt 3}
+\end{examples}
 
 \end{document}
