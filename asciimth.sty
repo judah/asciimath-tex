@@ -205,15 +205,15 @@
 % When we get to an unprocessed block, we should start the parsing process over
 % again.
 \def\defineTokTypes@{%
-    \def\block{\readO\block}%
-    \def\startParen{\readO\startParen}%
-    \def\sqrtT{\readO\sqrtT}%
+    \def\block{\readO@\block}%
+    \def\startParen{\readO@\startParen}%
+    \def\sqrtT{\readO@\sqrtT}%
 }
 
 
-\def\readO{\let\useS=\maybeDoFraction\readS}
-\def\maybeDoFraction#1#2#3{%
-    \ifNextTokIs@/{\readFraction{#3}}{\putBlock#1{#2}{#3}}%
+\def\readO@{\let\useS=\maybeDoFraction@\readS@}
+\def\maybeDoFraction@#1#2#3{%
+    \ifNextTokIs@/{\readFraction@{#3}}{\putBlock@#1{#2}{#3}}%
 }
 
 % Checks whether the next token is #1.  If so, eats it and runs #2.
@@ -225,62 +225,63 @@
         
 % Given the numerator to a fraction (#1)
 % parses the next S and returns the resulting fraction.
-\def\readFraction#1{%
+\def\readFraction@#1{%
     \def\useS##1##2##3{{#1\over##3}}%
-    \readS
+    \readS@
 }
 
 % Reads an S nonterminal and passes the result to useS.
-\def\readS{%
+\def\readS@{%
     \def\useT##1##2##3{%
         \ifNextTokIs@_%
-            {\doSubscript{\putBlock##1{##2}{##3}}}%
+            {\doSubscript@{\putBlock@##1{##2}{##3}}}%
             {\ifNextTokIs@^%
-                {\doSupscript{\putBlock##1{##2}{##3}}}%
+                {\doSupscript@{\putBlock@##1{##2}{##3}}}%
                 {\useS##1{##2}{##3}}}%
     }
-    \readT
+    \readT@
 }
-\def\doSubscript#1{%
+\def\doSubscript@#1{%
     \def\useT##1##2##3{%
         \ifNextTokIs@^%
-            {\doSupscript{#1_{##3}}}%
+            {\doSupscript@{#1_{##3}}}%
             {\useS0{}{#1_{##3}}}%
-    }\readT
+    }\readT@
 }
 % First, read an optional minus sign.
-\def\doSupscript#1{%
+\def\doSupscript@#1{%
     \ifNextTokIs@-%
-        {\doSupscriptA1{#1}}%
-        {\doSupscriptA0{#1}}%
+        {\doSupscriptA@1{#1}}%
+        {\doSupscriptA@0{#1}}%
 }
-\def\doSupscriptA#1#2{%
+\def\doSupscriptA@#1#2{%
     \ifx1#1% minus sign
         \def\useT##1##2##3{%
-            \useS0{}{#2^{-\putBlock##1{##2}{##3}}}%
+            \useS0{}{#2^{-\putBlock@##1{##2}{##3}}}%
         }%
     \else
         \def\useT##1##2##3{%
             \useS0{}{#2^{##3}}%
         }%
     \fi
-    \readT
+    \readT@
 }
 
 
-\def\putBlock#1#2#3{%
+\def\putBlock@#1#2#3{%
     \ifx0#1\def\next{{#3}}%
-    \else\def\next{{\wrapit#2{#3}}}%
+    \else\def\next{{\wrapBlock@#2{#3}}}%
     \fi\next
 }
-\def\wrapit#1#2#3{\left#1#3\right#2}
+% Separate function to split apart the left and right paren chars.
+\def\wrapBlock@#1#2#3{\left#1#3\right#2}
 
 % Reads a "T" terminal (a lone block or a parenthesized expression)
 % and then passes it as an argument to \useT.
-\def\readT#1{%
-    \ifx#1\block\let\next=\readTBlock
-    \else\ifx#1\startParen\let\next=\readTParen
-    \else\ifx#1\sqrtT\let\next=\readSqrtT
+\def\readT@#1{%
+    \ifx#1\block\let\next=\readTBlock@
+    \else\ifx#1\startParen\let\next=\readTParen@
+    \else\ifx#1\sqrtT\let\next=\readSqrtT@
     \else\def\next{\message{Oops: ran into a non-block:\noexpand#1}\end}%
     \fi\fi\fi
     % TODO: sqrt causes us to read another T.
@@ -288,56 +289,56 @@
 }
 
 % OK, this is a little tricky b/c we need to keep the old version of useT.
-\def\readSqrtT{
+\def\readSqrtT@{
     \bgroup
     \def\useT##1##2##3{%
         \egroup
         \useT0{}{\sqrt{##3}}%
     }%
-    \readT
+    \readT@
 }
         
 
 
-\newtoks\parenContents
-\newcount\parenLevel
+\newtoks\parenContents@
+\newcount\parenLevel@
 
-\def\readTBlock#1#2#3{\useT#1{#2}{#3}}
-\def\readTParen#1{%
+\def\readTBlock@#1#2#3{\useT#1{#2}{#3}}
+\def\readTParen@#1{%
     \def\parenStarter{#1}%
-    \parenLevel=0\parenContents={}%
-    \scanParenBlock
+    \parenLevel@=0\parenContents@={}%
+    \scanParenBlock@
 }
 % Need to check whether a '{' is next (e.g. lexing numbers produces it)
-\def\scanParenBlock{\futurelet\nextTok\scanParenBlockA}
-\def\scanParenBlockA{%
-    \ifx\bgroup\nextTok\let\next=\scanBraced
-    \else\let\next=\scanParenBlockB
+\def\scanParenBlock@{\futurelet\nextTok\scanParenBlockA@}
+\def\scanParenBlockA@{%
+    \ifx\bgroup\nextTok\let\next=\scanBraced@
+    \else\let\next=\scanParenBlockB@
     \fi\next
 }
-\def\scanBraced#1{%
-    \appendToks@\parenContents{{#1}}
-    \scanParenBlock
+\def\scanBraced@#1{%
+    \appendToks@\parenContents@{{#1}}
+    \scanParenBlock@
 }
-\def\scanParenBlockB#1{%
+\def\scanParenBlockB@#1{%
     \ifx#1\endParen
-        \ifnum0<\parenLevel
+        \ifnum0<\parenLevel@
             \def\next{
-                \advance\parenLevel by -1%
-                \appendToks@\parenContents{\endParen}
-                \scanParenBlock
+                \advance\parenLevel@ by -1%
+                \appendToks@\parenContents@{\endParen}
+                \scanParenBlock@
             }%
         \else\def\next##1{%
                 \edef\newStuff{%
-                    1{\parenStarter##1}{\the\parenContents}%
+                    1{\parenStarter##1}{\the\parenContents@}%
                 }%
                 \expandafter\useT\newStuff%
             }%
         \fi
     \else
-        \ifx#1\startParen\advance\parenLevel by 1\fi
-        \appendToks@\parenContents{#1}%
-        \let\next=\scanParenBlock
+        \ifx#1\startParen\advance\parenLevel@ by 1\fi
+        \appendToks@\parenContents@{#1}%
+        \let\next=\scanParenBlock@
     \fi
     \next
 }
