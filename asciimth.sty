@@ -18,9 +18,6 @@
     \catcode32=\active
     \def\sspace{ }% Do it here so the inside space is lexed as active
     \ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
-    % def ^,_,/ and (
-    % def sqrt et al
-    %\defParenCmds
     \defineTokTypes@
 }
 
@@ -75,8 +72,6 @@
     \else\ifx#1)\def\next{\addLexed@{\endParen)}\lexTokens@}%
     \else\ifx#1]\def\next{\addLexed@{\endParen]}\lexTokens@}%
     \else\ifx#1-\def\next{\addLexed@{-}\lexTokens@}%
-    % TODO: if it's a digit (or if it's a '-' and the next token's a digit
-    % then read a number and turn it into a block.
     \else
         \ifisdigitchar@#1{\def\next{\scanNumber@{#1}}}%
             {\def\next{\addBlock@{#1}\lexTokens@}}%
