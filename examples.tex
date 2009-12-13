@@ -20,7 +20,7 @@
 \def\testRow{\hline\changeSpaces\testRowA}
 \def\testRowA#1{%
     \changeSpacesBack
-    \exampleRow{\replaceSuperSubScript#1\end}{`#1`}%
+    \exampleRow{\sanitizeVerbose#1\end}{`#1`}%
 }
     
 \def\exampleRow#1#2{%
@@ -39,13 +39,15 @@
 
 % We can't just set the catcodes of ^ and _ because we want them as letters
 % in the \tt but as super/subscripts in the `...`.
-\def\replaceSuperSubScript{\futurelet\nextTok\replaceSuperSubScriptA}
-\def\replaceSuperSubScriptA#1{%
+\def\sanitizeVerbose{\futurelet\nextTok\sanitizeVerboseA}
+\def\sanitizeVerboseA#1{%
     \ifx#1\end\let\next=\relax
-    \else\ifx#1^\def\next{\char94\replaceSuperSubScript}%
-    \else\ifx#1_\def\next{\char95\replaceSuperSubScript}%
-    \else\def\next{#1\replaceSuperSubScript}%
-    \fi\fi\fi
+    \else\ifx#1^\def\next{\char94\sanitizeVerbose}%
+    \else\ifx#1_\def\next{\char95\sanitizeVerbose}%
+    % If it's a macro, unpack the name.
+    \else\ifcat\noexpand#1\def\def\next{\string#1\sanitizeVerbose}%
+    \else\def\next{#1\sanitizeVerbose}%
+    \fi\fi\fi\fi
     \next
 }
 
@@ -79,8 +81,10 @@ the features in the package.
 \testRow{x ge 0 implies x x ge 0}
 \testRow{t}
 \testRow{1-a}
-\testRow{1 234}
 \testRow{[2,3)}
+\testRow{1 234}
+\testRow{a b - a\,b}
+%\rawExampleRow{a b - a\,{\char108},b}{`a b - a\,b`}
 \rawExampleRow{}{``}
 \rawExampleRow{ }{` `}
 \end{examples}
@@ -110,7 +114,7 @@ the features in the package.
 \testRow{a_1^2}
 \testRow{(a+b)_(k_1)^(x+2)}
 \testRow{sum_(n=1)^infty 1/n^2}
-\testRow{int_pi^infty 1/(sin x)^2 d x}
+\testRow{int_pi^infty 1/(sin x)^2\,d x}
 \end{examples}
 
 \begin{examples}{Square roots}
