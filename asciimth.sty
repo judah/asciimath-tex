@@ -1,5 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}[1994/12/01]
 \ProvidesPackage{asciimth}[2009/12/11 v0.1 ASCIIMath support for LaTeX]
+\RequirePackage{amsfonts}% for \mathbb
 
 \def\appendToks@#1#2{%
     \edef\tmpA{\the#1}%
@@ -376,3 +377,5 @@
 \addASCIIMathCmd{sqrt}{\sqrt}{1}
 \def\myrootn@#1#2{{\sqrt[#1]{#2}}}
 \addASCIIMathCmd{root}{\myrootn@}{2}
+\addASCIIMathCmd{bb}{\mathbb}{1}
+\addASCIIMathCmd{hat}{\hat}{1}
