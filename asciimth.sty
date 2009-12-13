@@ -33,6 +33,7 @@
 % choice.
 \def\startParse@#1`{%
     \lexedTokens@={}\lexTokens@#1\startParse@
+    %\message{Lexed: \the\lexedTokens@.}
     \mathdelim\the\lexedTokens@\mathdelim
     \endgroup
 }
@@ -134,17 +135,19 @@
 }
 
 \def\sqrtString@{sqrt}%
-\def\emitCSAndLex@{%
+\def\emitCSAndLex@{\emitCSNameStr@\lexTokens@}
+\def\emitCSNameStr@{%
     \edef\scannedStr{\the\csNameStr@}%
     \ifx\sqrtString@\scannedStr
-        \def\next{\addLexed@{\sqrtT}\lexTokens@}%
-    \else
+        \def\next{\addLexed@{\sqrtT}}%
+    \else\expandafter\ifcsname\the\csNameStr@\endcsname
         \def\next{%
             \expandafter\expandafter\expandafter
                 \addBlock@\expandafter\csname\scannedStr\endcsname
-            \lexTokens@
         }%
-    \fi\next
+    \else\def\next{\message{Oops, not defined!}\end}
+    \fi\fi
+    \next
 }
 
 %%%%%%%%%%%%%%
