@@ -30,7 +30,7 @@
 % choice.
 \def\startParse@#1`{%
     \lexedTokens@={}\lexTokens@#1\startParse@
-    %\message{Lexed: \the\lexedTokens@.}
+    %\message{Lexed: \the\lexedTokens@.}%
     \mathdelim\the\lexedTokens@\mathdelim
     \endgroup
 }
@@ -129,20 +129,29 @@
     \parseCS@
 }
 
-\def\sqrtString@{sqrt}%
 \def\emitCSAndLex@{\emitCSNameStr@\lexTokens@}
 \def\emitCSNameStr@{%
-    \edef\scannedStr{\the\csNameStr@}%
-    \ifx\sqrtString@\scannedStr
-        \def\next{\addLexed@{\sqrtT}}%
+    \edef\asciiCmdName{@\the\csNameStr@ @asciimacro@}
+    % First, check whether this name has been set with \addASCIIMathCmd:
+    \expandafter\ifcsname\asciiCmdName\endcsname
+        \def\next{\expandafter\addPredefinedName@\expandafter{\asciiCmdName}}%
+    % Otherwise, check if it's set as a normal macro:
     \else\expandafter\ifcsname\the\csNameStr@\endcsname
         \def\next{%
             \expandafter\expandafter\expandafter
-                \addBlock@\expandafter\csname\scannedStr\endcsname
+                \addBlock@\expandafter\csname\the\csNameStr@\endcsname
         }%
-    \else\def\next{\message{Oops, not defined!}\end}
-    \fi\fi
-    \next
+    \else\def\next{%
+            \message{Oops, command "\the\csNameStr@" is not defined!}\end
+        }%
+    \fi\fi\next
+}
+
+\def\addPredefinedName@#1{%
+    \expandafter\expandafter\expandafter\addPredefinedNameA@\csname#1\endcsname
+}
+\def\addPredefinedNameA@#1#2{%
+    \addLexed@{\asciiCmd{#1}{#2}}%
 }
 
 %%%%%%%%%%%%%%
@@ -154,7 +163,9 @@
 % O ->  S    | S / S
 % S ->  T    | T^Tm  | T_T   | T_T^Tm
 % Tm -> T | -T
-% T -> <block> or (E) | sqrt T
+% T -> <block> or (E) | <func> T_1 ... T_n
+% Each <func> was defined by addASCIIMathCmd
+% and expects a fixed number of arguments.
 %
 % We handle the recursion by just accumulating the unexpanded inside
 % and later outputting it inside of parens, \frac, etc.
@@ -168,6 +179,7 @@
 %               #3 is the internals of the block.
 % \startParen#1: #1 is '(', '[', etc.
 % \endParen#1: #1 is ')', ']', etc.
+% \asciiCmd#1#2: #1 is code, #2 is number of args.
 % 
 % We also provide for other macros like \blockSqrt.  When it appears, it
 % parses the upcoming block and expands into another block.
@@ -178,7 +190,7 @@
     \def\block{\readO@\block}%
     \def\startParen{\readO@\startParen}%
     \def\endParen##1{\message{Oops; found an unmatched "##1".}\end}%
-    \def\sqrtT{\readO@\sqrtT}%
+    \def\asciiCmd{\readO@\asciiCmd}%
 }
 
 
@@ -252,23 +264,39 @@
 \def\readT@#1{%
     \ifx#1\block\let\next=\readTBlock@
     \else\ifx#1\startParen\let\next=\readTParen@
-    \else\ifx#1\sqrtT\let\next=\readSqrtT@
+    \else\ifx#1\asciiCmd\let\next=\readTASCIICmd@
     \else\def\next{\message{Oops: ran into a non-block:\noexpand#1}\end}%
     \fi\fi\fi
-    % TODO: sqrt causes us to read another T.
     \next
 }
 
-% OK, this is a little tricky b/c we need to keep the old version of useT.
-\def\readSqrtT@{%
-    \bgroup
-    \def\useT##1##2##3{%
-        \egroup
-        \useT0{}{\sqrt{##3}}%
-    }%
-    \readT@
+% OK, this uses a couple of tricks:
+% 1) The #1 of asciiCmdLoop@ is a partial application of the macro.
+%    So appending something to that parameter means applying the macro
+%    to an additional argument.
+%
+% 2) This function recursively calls readT.  So it saves the relevant
+%    parameters by putting the readT call in a new group.
+\newcount\cmdArgsNeeded@
+\def\readTASCIICmd@#1#2{\cmdArgsNeeded@=#2\asciiCmdLoop@{#1}}
+\def\asciiCmdLoop@#1{
+    \ifnum\cmdArgsNeeded@=0%
+        \def\next{\useT0{}{#1}}%
+    \else
+        \def\next{%
+            \advance\cmdArgsNeeded@ by -1\relax%
+            % start a new group since we need to keep around the old
+            % version of useT and cmdArgsNeeded.
+            \bgroup
+            \def\useT####1####2####3{%
+                \egroup
+                \asciiCmdLoop@{#1{####3}}%
+            }%
+            \readT@
+        }%
+    \fi\next
 }
-        
+
 
 
 \newtoks\parenContents@
@@ -315,3 +343,36 @@
 }
 
 
+%%%%%%%%%%%%%
+% Using TeX macros inside of ASCIIMath:
+%
+% A macro which takes no arguments (for example, \alpha or \Sum) can always
+% be referred to by name.  And a build-in macro like \sqrt will work.  But
+% other macros which take an argumetn will not work by default.
+%
+% The following macro tells the ASCIIMath engine that a macro takes arguments:
+% It works by setting a corresponding macro name which the engine will look up.
+% Outermost parentheses of arguments will be eliminated (just like for sqrt).
+% The format is:
+% <name> -> @name@asciimacro@
+% The macro definition will internally keep track of the number of args.
+%
+% Usage example:
+% 
+% \newcommand{\myroot}[2]{\sqrt[#1]{#2}}
+% \addASCIIMathCmd{root}{\myroot}{2}
+%
+\def\addASCIIMathCmd#1#2#3{%
+    \begingroup
+    \makeatletter
+    \edef\name{@#1@asciimacro@}
+    \def\macroValue{{#2}#3}
+    \expandafter\global\expandafter\let\csname\name\endcsname=\macroValue
+    \endgroup
+}
+
+% Start off with a couple of definitions:
+% sqrt, root, hat, bb@
+\addASCIIMathCmd{sqrt}{\sqrt}{1}
+\def\myrootn@#1#2{{\sqrt[#1]{#2}}}
+\addASCIIMathCmd{root}{\myrootn@}{2}

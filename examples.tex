@@ -69,8 +69,8 @@
 \begin{document}
 
 This document displays a list of examples of equations typeset with the
-{\tt asciimth} package.  It serves both as documentation and as a test of all of
-the features in the package.
+{\tt asciimth} package.  It serves both as documentation and as a comprehensive
+test of the package.
 
 \startTrace
 \begin{examples}{Simple commands}
@@ -123,6 +123,38 @@ the features in the package.
 \testRow{2/sqrt(3alpha)}
 \testRow{sqrt sqrt 3}
 \testRow{(2+3)/sqrt sqrt sqrt 3}
+\testRow{root n (x^2+1)}
+\testRow{(-b pm sqrt(b^2-4a c))/(2a)}
 \end{examples}
+
+Finally, as an example of the various ways in which you can use this package, we
+present a formula for the root of a cubic polynomial (via Wikipedia):
+
+When `x^3+a x^2+b x+c`, one of the roots is
+\[`
+-1/3(a
++root3((m+sqrt(m^2-4k^3))/2)
++root3((m-sqrt(m^2-4k^3))/2))
+`\]
+where:
+\begin{align*}
+m&=`2a^3-9a`,\\
+k&=`a^2-3b`.\\
+\end{align*}
+
+The above text was typeset via:
+\begin{verbatim}
+When `x^3+a x^2+b x+c`, one of the roots is
+\[`
+-1/3(a
++root3((m+sqrt(m^2-4k^3))/2)
++root3((m-sqrt(m^2-4k^3))/2))
+`\]
+where:
+\begin{align*}
+m&=`2a^3-9a`,\\
+k&=`a^2-3b`,\\
+\end{align*}
+\end{verbatim}
 
 \end{document}
