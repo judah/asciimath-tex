@@ -252,8 +252,8 @@
 
 
 \def\putBlock@#1#2#3{%
-    \ifx0#1\def\next{{#3}}%
-    \else\def\next{{\wrapBlock@#2{#3}}}%
+    \ifx0#1\def\next{#3}%
+    \else\def\next{\wrapBlock@#2{#3}}%
     \fi\next
 }
 % Separate function to split apart the left and right paren chars.
