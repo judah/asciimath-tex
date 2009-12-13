@@ -60,34 +60,52 @@
 \newenvironment{examples}[1]
     {\renewcommand{\arraystretch}{1.5}
     \renewcommand{\tabcolsep}{0.2cm}
-    \begin{tabular}{|p{6cm}|p{3cm}|}
+    \begin{tabular}{|p{6cm}|p{3.5cm}|}
         \multicolumn{2}{c}{\textbf{#1}}\\}
     {\hline\end{tabular}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\title{The {\tt asciimth} package}
+\author{Judah Jacobson}
 \begin{document}
+\maketitle
 
+The {\tt asciimth} package provides a more readable way to typeset
+mathematics in \LaTeX{}.  The interface is very simple: any text surrounded by
+left-quotes (\char18\ldots\char18) will be parsed by the {\tt asciimth}
+engine.  For example, if we type {\tt\char18 (x-1)\char94(2x)/(4-3)\char18} in
+the middle of a paragraph, it is typeset as `(x-1)^(2x)/(4-3)`.  
 
-This document displays a list of examples of equations typeset with the
-{\tt asciimth} package.  It serves both as documentation and as a comprehensive
+That notation can be mixed with standard \TeX{} math commands by
+inserting a left-quoted expression in the middle of an existing expression or
+equation.  For example, \verb|$\frac{1}{2}-`3/4`$| is typeset as 
+$\frac{1}{2}-`3/4`$.  It can also be embedded into display math
+(\verb|$$| or \verb|\[|) or a math environment such as {\tt multiline} or
+\texttt{align}.
+
+For compatibility with the common use of left-quotes, the empty expression 
+{\tt\char18\char18} is typeset as the begin-quotes symbol (``).
+
+This document displays a range of example equations as typeset by {\tt
+asciimth}.  It serves both as documentation and as a comprehensive
 test of the package.
 
 \begin{section}{Tables}
 
 \begin{examples}{Simple commands}
 \testRow{9+alpha}
-\testRow{ (9)}
-\testRow{9+(4-(alpha))}
 \testRow{gamma>2 implies gamma*gamma>4}
 \testRow{x ge 0 implies x x ge 0}
 \testRow{t}
 \testRow{1-a}
-\testRow{[2,3)}
 \testRow{1 234}
 \testRow{a b - a\,b}
-\rawExampleRow{}{``}
+\testRow{ (9)}
+\testRow{9+(4-(alpha))}
+\testRow{[2,3)}
 \rawExampleRow{ }{` `}
+\rawExampleRow{}{``}
 \end{examples}
 
 \begin{examples}{Fractions}
@@ -173,11 +191,12 @@ k&=`a^2-3b`,\\
 
 \begin{section}{Current issues}
 
-Currently there's some typesetting issues caused by the fact that we always use {\tt
+Currently there's some typesetting issues, mostly caused by the fact that we always use {\tt
 \string\left} and {\tt\string\right} delimiters.  However, I expect those can be
 fixed by using the \texttt{nath} package.  This may require \sout{stealing} adapting
 some of its macros for my own use, though, since that package isn't compatible with
-\texttt{asciimath}.
+\texttt{asciimath}.  (That package provides other useful features such as
+deciding whether to write a fraction as `x/y` or `x//y` based on context.)
 \begin{itemize}
 \item In the first row, the spacing between `f` and the parenthesis is too large;
 compare $f(x)$ versus `f(x)`.
