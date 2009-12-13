@@ -1,0 +1,22 @@
+My own goals: Something lightweight, simple and immediately practical for
+mathematicians.
+
+nath
+- replacement for left/right (spacing, better choice)
+- decide whether to use / based on display/inline
+(use frac(x)(y) to force fractions as display, and x//y as inline.
+- Also their subfractions don't get smaller; that's nice.
+
+nath really hasn't caught on, despite its coolness.  Most likely because it's
+not compatible with amsmath.  I think if I don't try to implement the equation
+environments it'll fix many incompatibilities.
+
+breqn: Not quite what I'm trying to do, but it's the same basic philosophy as
+asciimath and nath.
+
+ASCIIMathML: my motivation.  Should keep porting features from it.
+
+Other things to check out:
+"MathML Formatting with TeX rules"
+"Two linear formats interoperable with MathML"
+"Unicode nearly-plain-text encoding of mathematics"
