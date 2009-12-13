@@ -1,25 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}[1994/12/01]
 \ProvidesPackage{asciimth}[2009/12/11 v0.1 ASCIIMath support for LaTeX]
 
-% OK, new idea:
-% Step 1: do a ``lexer'' pass on the list which tokenizes sequences of letters and
-% removes all spaces.
-% Step 2: begingroup, then Make ``(^_/'' active.
-%         (will need to first set \plainlparen, etc. macros to be used later.)
-% Step 3: output the list, followed by an endgroup.
-%
-% The def of left parentheses is:
-% - read the whole nested parens block
-% - if next token is a ^,_ or /, output as {...};
-%   otherwise output as {\left(...\right)}.
-%
-% The def of ^ is:
-% read one character.  
-%
-% Also redef \sqrt to check if it's followed by a (...), and if so to read that block
-% and do \plainSqrt{...}.
- 
-
 \def\appendToks@#1#2{%
     \edef\tmpA{\the#1}%
     #1=\expandafter{\tmpA#2}%
