@@ -55,8 +55,6 @@
 \def\rawExampleRow{\hline\changeSpaces\readFirstPart}
 \def\readFirstPart#1{\changeSpacesBack\exampleRow{#1}}
 
-\parskip=10pt
-
 \newenvironment{examples}[1]
     {\renewcommand{\arraystretch}{1.5}
     \renewcommand{\tabcolsep}{0.2cm}
@@ -71,11 +69,12 @@
 \begin{document}
 \maketitle
 
+\section{Introduction}
 The {\tt asciimth} package provides a more readable way to typeset
 mathematics in \LaTeX{}.  The interface is very simple: any text surrounded by
 left-quotes (\char18\ldots\char18) will be parsed by the {\tt asciimth}
-engine.  For example, if we type {\tt\char18 (x-1)\char94(2x)/(4-3)\char18} in
-the middle of a paragraph, it is typeset as `(x-1)^(2x)/(4-3)`.  
+engine.  For example, typing {\tt\char18 (x-1)\char94(2x)/(4-3)\char18} in
+the middle of a paragraph produces `(x-1)^(2x)/(4-3)`.  
 
 That notation can be mixed with standard \TeX{} math commands by
 inserting a left-quoted expression in the middle of an existing expression or
