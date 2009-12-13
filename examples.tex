@@ -1,6 +1,7 @@
 \documentclass{article}
-\usepackage{asciimth}
 \usepackage{amsmath}
+\usepackage{ulem}
+\usepackage{asciimth}
 
 \def\startTrace{\message{Starting trace...@}%
     \tracingmacros=2\tracingassigns=2\tracingcommands=2%
@@ -67,9 +68,12 @@
 
 \begin{document}
 
+
 This document displays a list of examples of equations typeset with the
 {\tt asciimth} package.  It serves both as documentation and as a comprehensive
 test of the package.
+
+\begin{section}{Tables}
 
 \begin{examples}{Simple commands}
 \testRow{9+alpha}
@@ -82,7 +86,6 @@ test of the package.
 \testRow{[2,3)}
 \testRow{1 234}
 \testRow{a b - a\,b}
-%\rawExampleRow{a b - a\,{\char108},b}{`a b - a\,b`}
 \rawExampleRow{}{``}
 \rawExampleRow{ }{` `}
 \end{examples}
@@ -103,6 +106,7 @@ test of the package.
 \testRow{hat(a)}
 \testRow{x in bb(Z)}
 \end{examples}
+
 
 \begin{examples}{Exponents and subscripts}
 \testRow{5^14}
@@ -129,6 +133,10 @@ test of the package.
 \testRow{root n (x^2+1)}
 \testRow{(-b pm sqrt(b^2-4a c))/(2a)}
 \end{examples}
+
+\end{section}
+
+\begin{section}{Example usage}
 
 Finally, as an example of the various ways in which you can use this package, we
 present a formula for the root of a cubic polynomial (via Wikipedia):
@@ -159,5 +167,33 @@ m&=`2a^3-9a`,\\
 k&=`a^2-3b`,\\
 \end{align*}
 \end{verbatim}
+
+\end{section}
+
+
+\begin{section}{Current issues}
+
+Currently there's some typesetting issues caused by the fact that we always use {\tt
+\string\left} and {\tt\string\right} delimiters.  However, I expect those can be
+fixed by using the \texttt{nath} package.  This may require \sout{stealing} adapting
+some of its macros for my own use, though, since that package isn't compatible with
+\texttt{asciimath}.
+\begin{itemize}
+\item In the first row, the spacing between `f` and the parenthesis is too large;
+compare $f(x)$ versus `f(x)`.
+\item The parenthesis around the inner `sum` is too large; they erroneously try
+to wrap the subscript `j`.
+\end{itemize}
+
+\begin{examples}{Parenthesis tests}
+\testRow{f(x)+g(x/y)}
+\testRow{(x+y)(x-y)}
+\testRow{f(x^2)+f(2^(2/y))}
+\testRow{sum(x_i)+sum(x/y)}
+\testRow{sum_i(sum_j(2*x))}
+\end{examples}
+
+\end{section}
+
 
 \end{document}

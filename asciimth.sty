@@ -2,6 +2,11 @@
 \ProvidesPackage{asciimth}[2009/12/11 v0.1 ASCIIMath support for LaTeX]
 \RequirePackage{amsfonts}% for \mathbb
 
+% Other packages which I could use:
+% breqn
+% nath (seems to implement something very close to what I'm doing...)
+% 
+
 \def\appendToks@#1#2{%
     \edef\tmpA{\the#1}%
     #1=\expandafter{\tmpA#2}%
@@ -258,6 +263,9 @@
     \fi\next
 }
 % Separate function to split apart the left and right paren chars.
+% TODO: adjust spacing?  eg, add \! before the left-paren.  However,
+% it would be better for any adjustments to depend on the size of the
+% subexpression.
 \def\wrapBlock@#1#2#3{\left#1#3\right#2}
 
 % Reads a "T" terminal (a lone block or a parenthesized expression)
