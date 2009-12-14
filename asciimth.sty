@@ -371,15 +371,15 @@
     \begingroup
     \makeatletter
     \edef\name{@#1@asciimacro@}
-    \def\macroValue{{#2}#3}
+    \def\macroValue{{#3}#2}
     \expandafter\global\expandafter\let\csname\name\endcsname=\macroValue
     \endgroup
 }
 
 % Start off with a couple of definitions:
 % sqrt, root, hat, bb@
-\addASCIIMathCmd{sqrt}{\sqrt}{1}
+\addASCIIMathCmd{sqrt}{1}{\sqrt}
 \def\myrootn@#1#2{{\sqrt[#1]{#2}}}
-\addASCIIMathCmd{root}{\myrootn@}{2}
-\addASCIIMathCmd{bb}{\mathbb}{1}
-\addASCIIMathCmd{hat}{\hat}{1}
+\addASCIIMathCmd{root}{2}{\myrootn@}
+\addASCIIMathCmd{bb}{1}{\mathbb}
+\addASCIIMathCmd{hat}{1}{\hat}
