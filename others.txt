@@ -11,6 +11,11 @@ nath really hasn't caught on, despite its coolness.  Most likely because it's
 not compatible with amsmath.  I think if I don't try to implement the equation
 environments it'll fix many incompatibilities.
 
+ALSO: Note nath is GPL'd, so if I use its code I should do the same.
+
+See also the refs in Marvan.pdf (Rayleigh & Wick) which discuss rules for
+typesetting math. (and refs of marvan-3.pdf)
+
 breqn: Not quite what I'm trying to do, but it's the same basic philosophy as
 asciimath and nath.
 
