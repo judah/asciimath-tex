@@ -144,7 +144,7 @@
                 \addBlock@\expandafter\csname\the\csNameStr@\endcsname
         }%
     \else\def\next{%
-            \message{Oops, command "\the\csNameStr@" is not defined!}\end
+            \errmessage{Oops, command "\the\csNameStr@" is not defined!}\end
         }%
     \fi\fi\next
 }
@@ -191,7 +191,7 @@
 \def\defineTokTypes@{%
     \def\block{\readO@\block}%
     \def\startParen{\readO@\startParen}%
-    \def\endParen##1{\message{Oops; found an unmatched "##1".}\end}%
+    \def\endParen##1{\errmessage{Oops; found an unmatched "##1".}\end}%
     \def\asciiCmd{\readO@\asciiCmd}%
 }
 
@@ -276,7 +276,7 @@
     \ifx#1\block\let\next=\readTBlock@
     \else\ifx#1\startParen\let\next=\readTParen@
     \else\ifx#1\asciiCmd\let\next=\readTASCIICmd@
-    \else\def\next{\message{Oops: ran into a non-block:\noexpand#1}\end}%
+    \else\def\next{\errmessage{Oops: ran into a non-block:\noexpand#1}\end}%
     \fi\fi\fi
     \next
 }
