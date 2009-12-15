@@ -20,8 +20,10 @@ breqn: Not quite what I'm trying to do, but it's the same basic philosophy as
 asciimath and nath.
 
 ASCIIMathML: my motivation.  Should keep porting features from it.
+See also the W3C page on MathML software: http://www.w3.org/Math/Software/
 
 Other things to check out:
 "MathML Formatting with TeX rules"
 "Two linear formats interoperable with MathML"
 "Unicode nearly-plain-text encoding of mathematics"
+"mathscape - Combining Mathematics and TeX"
