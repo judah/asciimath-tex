@@ -258,11 +258,17 @@
     \else\def\next{\wrapBlock@#2{#3}}%
     \fi\next
 }
-% Separate function to split apart the left and right paren chars.
-% TODO: adjust spacing?  eg, add \! before the left-paren.  However,
-% it would be better for any adjustments to depend on the size of the
-% subexpression.
-\def\wrapBlock@#1#2#3{\left#1#3\right#2}
+% #1 is the open-delim, #2 is the close-delim.
+% Note: using \left..\right makes the object in parentheses act like
+% \mathinner, which isn't great since this happens to EVERY parenthesis.
+% For example, in $f\left(x\right)$ there's too much space between
+% the "f" and the "(". 
+% Fix this by making it act like a \mathopen+\mathclose.
+% Note we do still lose a tiny bit of kern between $f(x)$ and `f(x)`, but
+% it's less noticeable.
+% TODO: we could try checking the height of the inner formula ourselves, and
+% use plain "(" and ")" if it's no bigger than those characters.
+\def\wrapBlock@#1#2#3{\mathopen{}\mathclose{\left#1#3\right#2}}
 
 % Reads a "T" terminal (a lone block or a parenthesized expression)
 % and then passes it as an argument to \useT.

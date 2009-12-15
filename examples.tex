@@ -188,19 +188,16 @@ k&=`a^2-3b`,\\
 \end{section}
 
 
-\begin{section}{Current issues}
+\begin{section}{Layout tests}
 
-Currently there's some typesetting issues, mostly caused by the fact that we always use {\tt
-\string\left} and {\tt\string\right} delimiters.  However, I expect those can be
-fixed by using the \texttt{nath} package.  This may require \sout{stealing} adapting
-some of its macros for my own use, though, since that package isn't compatible with
-\texttt{asciimath}.  (That package also provides other features which may prove
-useful, such as choosing between writing a fraction as `x/y` or `x//y`
-based on context.)
+These examples cover a few issues which are caused by the fact that we always
+use {\tt\string\left} and {\tt\string\right} delimiters:
 \begin{itemize}
-\item In the first example, the spacing between `f` and the parenthesis is too large;
-compare $f(x)$ versus `f(x)`.
-\item The parentheses around the inner `sum` are too large; they unnecessarily grow
+\item Using {\tt\string\left(\ldots\string\right)} causes different
+spacing than
+{\tt(\ldots)}.  That issue has been resolved.
+\item The parentheses around the inner `sum` in the last example
+are too large; they unnecessarily grow
 to cover the subscript `j`.
 \end{itemize}
 
@@ -208,7 +205,7 @@ to cover the subscript `j`.
 \testRow{f(x)+g(x/y)}
 \testRow{(x+y)(x-y)}
 \testRow{f(x^2)+f(2^(2/y))}
-\testRow{sum(x_i)+sum(x/y)}
+\testRow{sum(x_i)+sum(x/y).}
 \testRow{sum_i(sum_j(2*x))}
 \end{examples}
 
