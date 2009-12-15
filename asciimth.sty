@@ -133,7 +133,7 @@
 
 \def\emitCSAndLex@{\emitCSNameStr@\lexTokens@}
 \def\emitCSNameStr@{%
-    \edef\asciiCmdName{@\the\csNameStr@ @asciimacro@}
+    \edef\asciiCmdName{@\the\csNameStr@ @asciimacro@}%
     % First, check whether this name has been set with \addASCIIMathCmd:
     \expandafter\ifcsname\asciiCmdName\endcsname
         \def\next{\expandafter\addPredefinedName@\expandafter{\asciiCmdName}}%
@@ -289,8 +289,8 @@
 % 2) This function recursively calls readT.  So it saves the relevant
 %    parameters by putting the readT call in a new group.
 \newcount\cmdArgsNeeded@
-\def\readTASCIICmd@#1#2{\cmdArgsNeeded@=#2\asciiCmdLoop@{#1}}
-\def\asciiCmdLoop@#1{
+\def\readTASCIICmd@#1#2{\cmdArgsNeeded@=#2\relax\asciiCmdLoop@{#1}}
+\def\asciiCmdLoop@#1{%
     \ifnum\cmdArgsNeeded@=0%
         \def\next{\useT0{}{#1}}%
     \else
@@ -376,8 +376,8 @@
 \def\addASCIIMathCmd#1#2#3{%
     \begingroup
     \makeatletter
-    \edef\name{@#1@asciimacro@}
-    \def\macroValue{{#3}#2}
+    \edef\name{@#1@asciimacro@}%
+    \def\macroValue{{#3}#2}%
     \expandafter\global\expandafter\let\csname\name\endcsname=\macroValue
     \endgroup
 }
