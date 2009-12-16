@@ -27,15 +27,15 @@
 \def\addLexed@{\appendToks@\lexedTokens@}
 \def\addBlock@#1{\addLexed@{\block0{}{#1}}}
 
-% TODO: what's the right thing to do here?
-% LaTeX redefines \end so I can't use it here...but startParse seems like a poor
-% choice.
 \def\startParse@#1`{%
-    \lexedTokens@={}\lexTokens@#1\startParse@
+    \lexedTokens@={}\lexTokens@#1\endScan@
     %\message{Lexed: \the\lexedTokens@.}%
     \mathdelim\the\lexedTokens@\mathdelim
     \endgroup
 }
+
+% sentinel value
+\def\endScan@{\errmessage{Oops, went over the end!}\endScan@}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Lexing
@@ -56,7 +56,7 @@
 % (eventually might actually want this...)
 \def\lexTokens@#1{%
     % ???? TODO ????
-    \ifx#1\startParse@\let\next=\relax
+    \ifx#1\endScan@\let\next=\relax
     \else\if\sspace@\noexpand#1\let\next=\lexTokens@% ignore spaces
     \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS@#1}%
     \else\ifcat\noexpand#1^\def\next{\addLexed@{^}\lexTokens@}%
