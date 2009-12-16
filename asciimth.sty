@@ -27,11 +27,14 @@
 \def\addLexed@{\appendToks@\lexedTokens@}
 \def\addBlock@#1{\addLexed@{\block0{}{#1}}}
 
+\newtoks\parsedTokens@
+
 \def\startParse@#1`{%
     \lexedTokens@={}\lexTokens@#1\endScan@
     %\message{Lexed: \the\lexedTokens@.}%
-    \def\useO##1{##1}%
-    \mathdelim\the\lexedTokens@\mathdelim
+    \expandafter\readOList@\the\lexedTokens@\endScan@
+    %\message{Parsed: \the\parsedTokens@.}%
+    \mathdelim\the\parsedTokens@\mathdelim
     \endgroup
 }
 
@@ -189,6 +192,8 @@
 
 % When we get to an unprocessed block, we should start the parsing process over
 % again.
+% TODO: This should not be necessary now...
+% Well, it kinda is, just so we can distinguish all these.
 \def\defineTokTypes@{%
     \def\block{\readO@\block}%
     \def\startParen{\readO@\startParen}%
@@ -196,11 +201,19 @@
     \def\asciiCmd{\readO@\asciiCmd}%
 }
 
+\def\readOList@{%
+    \parsedTokens@={}%
+    \def\useO##1{\appendToks@\parsedTokens@{##1}\readOListLoop@}%
+    \readOListLoop@
+}
+
+\def\readOListLoop@{\ifNextTokIs@\endScan@\relax\readO@}
 
 \def\readO@{\let\useS=\maybeDoFraction@\readS@}
 
 \def\maybeDoFraction@#1#2#3{%
-    \ifNextTokIs@/{\readFraction@{#3}}{\useO{\putBlock@#1{#2}{#3}}}%
+    \ifNextTokIs@/{\readFraction@{#3}}
+        {\let\useBlock=\useO\renderBlock@#1{#2}{#3}}%
 }
 
 % Checks whether the next token is #1.  If so, eats it and runs #2.
@@ -221,9 +234,9 @@
 \def\readS@{%
     \def\useT##1##2##3{%
         \ifNextTokIs@_%
-            {\doSubscript@{\putBlock@##1{##2}{##3}}}%
+            {\let\useBlock=\doSubscript@\renderBlock@##1{##2}{##3}}%
             {\ifNextTokIs@^%
-                {\doSupscript@{\putBlock@##1{##2}{##3}}}%
+                {\let\useBlock=\doSupscript@\renderBlock@##1{##2}{##3}}%
                 {\useS##1{##2}{##3}}}%
     }%
     \readT@
@@ -244,7 +257,8 @@
 \def\doSupscriptA@#1#2{%
     \ifx1#1% minus sign
         \def\useT##1##2##3{%
-            \useS0{}{#2^{-\putBlock@##1{##2}{##3}}}%
+            \def\useBlock####1{\useS0{}{#2^{####1}}}%
+            \renderBlock@##1{##2}{##3}%
         }%
     \else
         \def\useT##1##2##3{%
@@ -254,10 +268,11 @@
     \readT@
 }
 
-
-\def\putBlock@#1#2#3{%
-    \ifx0#1\def\next{#3}%
-    \else\def\next{\wrapBlock@#2{#3}}%
+% Wraps the argument #3 in the parentheses (#2) unless there are none (#1==0).
+% Passes the result to \useBlock.
+\def\renderBlock@#1#2#3{%
+    \ifx0#1\def\next{\useBlock{#3}}%
+    \else\def\next{\expandafter\useBlock\expandafter{\wrapBlock@#2{#3}}}%
     \fi\next
 }
 % #1 is the open-delim, #2 is the close-delim.
@@ -279,8 +294,9 @@
     \else\ifx#1-\def\next{\useT0{}{#1}}%
     \else\ifx#1\startParen\let\next=\readTParen@
     \else\ifx#1\asciiCmd\let\next=\readTASCIICmd@
+    \else\ifx#1/\def\next{\useT0{}{#1}}%
     \else\def\next{\errmessage{Oops: ran into a non-block:\noexpand#1}\end}%
-    \fi\fi\fi\fi
+    \fi\fi\fi\fi\fi
     \next
 }
 
