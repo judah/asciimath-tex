@@ -30,6 +30,7 @@
 \def\startParse@#1`{%
     \lexedTokens@={}\lexTokens@#1\endScan@
     %\message{Lexed: \the\lexedTokens@.}%
+    \def\useO##1{##1}%
     \mathdelim\the\lexedTokens@\mathdelim
     \endgroup
 }
@@ -197,8 +198,9 @@
 
 
 \def\readO@{\let\useS=\maybeDoFraction@\readS@}
+
 \def\maybeDoFraction@#1#2#3{%
-    \ifNextTokIs@/{\readFraction@{#3}}{\putBlock@#1{#2}{#3}}%
+    \ifNextTokIs@/{\readFraction@{#3}}{\useO{\putBlock@#1{#2}{#3}}}%
 }
 
 % Checks whether the next token is #1.  If so, eats it and runs #2.
@@ -211,7 +213,7 @@
 % Given the numerator to a fraction (#1)
 % parses the next S and returns the resulting fraction.
 \def\readFraction@#1{%
-    \def\useS##1##2##3{\frac{#1}{##3}}%
+    \def\useS##1##2##3{\useO{\frac{#1}{##3}}}%
     \readS@
 }
 
@@ -274,12 +276,15 @@
 % and then passes it as an argument to \useT.
 \def\readT@#1{%
     \ifx#1\block\let\next=\readTBlock@
+    \else\ifx#1-\def\next{\useT0{}{#1}}%
     \else\ifx#1\startParen\let\next=\readTParen@
     \else\ifx#1\asciiCmd\let\next=\readTASCIICmd@
     \else\def\next{\errmessage{Oops: ran into a non-block:\noexpand#1}\end}%
-    \fi\fi\fi
+    \fi\fi\fi\fi
     \next
 }
+
+\def\readTBlock@#1#2#3{\useT#1{#2}{#3}}
 
 % OK, this uses a couple of tricks:
 % 1) The #1 of asciiCmdLoop@ is a partial application of the macro.
@@ -308,51 +313,33 @@
     \fi\next
 }
 
-
-
+% Read parentheses in a similar style as above:
+% Keep a token list of the parenthesis contents
+% And continually read O's and append them into the token list
+% until you hit an endParen.
+% (Nested endParens will be automatically gobbled up by the
+% recursive call to readO).
 \newtoks\parenContents@
-\newcount\parenLevel@
-
-\def\readTBlock@#1#2#3{\useT#1{#2}{#3}}
 \def\readTParen@#1{%
     \def\parenStarter{#1}%
-    \parenLevel@=0\parenContents@={}%
-    \scanParenBlock@
-}
-% Need to check whether a '{' is next (e.g. lexing numbers produces it)
-\def\scanParenBlock@{\futurelet\nextTok\scanParenBlockA@}
-\def\scanParenBlockA@{%
-    \ifx\bgroup\nextTok\let\next=\scanBraced@
-    \else\let\next=\scanParenBlockB@
-    \fi\next
-}
-\def\scanBraced@#1{%
-    \appendToks@\parenContents@{{#1}}%
-    \scanParenBlock@
-}
-\def\scanParenBlockB@#1{%
-    \ifx#1\endParen
-        \ifnum0<\parenLevel@
-            \def\next{%
-                \advance\parenLevel@ by -1%
-                \appendToks@\parenContents@{\endParen}%
-                \scanParenBlock@
-            }%
-        \else\def\next##1{%
-                \edef\newStuff{%
-                    1{\parenStarter##1}{\the\parenContents@}%
-                }%
-                \expandafter\useT\newStuff%
-            }%
-        \fi
-    \else
-        \ifx#1\startParen\advance\parenLevel@ by 1\fi
-        \appendToks@\parenContents@{#1}%
-        \let\next=\scanParenBlock@
-    \fi
-    \next
+    \parenContents@={}%
+    \loopForEndParen@
 }
 
+\def\loopForEndParen@{\ifNextTokIs@\endParen\finishParen@\readMoreParenContents@}
+\def\readMoreParenContents@{%
+    \begingroup
+    \def\useO##1{%
+            \endgroup
+            \appendToks@\parenContents@{##1}%
+            \loopForEndParen@
+    }%
+    \readO@
+}
+\def\finishParen@#1{%
+    \edef\todo{\noexpand\useT1{\parenStarter#1}{\the\parenContents@}}%
+    \todo
+}
 
 %%%%%%%%%%%%%
 % Using TeX macros inside of ASCIIMath:
