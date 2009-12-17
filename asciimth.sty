@@ -189,15 +189,14 @@
 % 
 % E ->  O E  | <empty>
 % O ->  S    | S / S
-% S ->  T    | T^Tm  | T_T   | T_T^Tm
+% S ->  T    | S_Tm     | S^Tm
 % Tm -> T | -T
-% T -> <block> or (E) | <func> T_1 ... T_n
+% T -> <block> or (E)   | <func> T_1 ... T_n
 % Each <func> was defined by addASCIIMathCmd
 % and expects a fixed number of arguments.
 %
-% We handle the recursion by just accumulating the unexpanded inside
-% and later outputting it inside of parens, \frac, etc.
-% In particular, readO is NOT a recursive macro.
+% Note that an expression like 2^x^x will be accepted by asciimth,
+% and passed to TeX which will complain with a useful error message.
 %
 % Objects inside are:
 % Raw operations /,^,_,-
@@ -210,13 +209,8 @@
 % \endParen#1: #1 is ')', ']', etc.
 % \asciiCmd#1#2: #1 is code, #2 is number of args.
 % 
-% We also provide for other macros like \blockSqrt.  When it appears, it
-% parses the upcoming block and expands into another block.
-
-% When we get to an unprocessed block, we should start the parsing process over
-% again.
-% TODO: This should not be necessary now...
-% Well, it kinda is, just so we can distinguish all these.
+% These definitions should never actually be expanded.  However, they
+% are necessary for \ifx to distinguish between the tokens.
 \def\defineTokTypes@{%
     \def\block{\readO@\block}%
     \def\startParen{\readO@\startParen}%
