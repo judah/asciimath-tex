@@ -157,22 +157,28 @@
     \parseCS@
 }
 
-\def\emitCSAndLex@{\emitCSNameStr@\lexTokens@}
-\def\emitCSNameStr@{%
+\def\leftName@{@left@asciimacro@}
+\def\rightName@{@right@asciimacro@}
+\def\emitCSAndLex@{%
     \edef\asciiCmdName{@\the\csNameStr@ @asciimacro@}%
     % First, check whether this name has been set with \addASCIIMathCmd:
     \expandafter\ifcsname\asciiCmdName\endcsname
-        \def\next{\expandafter\addPredefinedName@\expandafter{\asciiCmdName}}%
+        \def\next{\expandafter\addPredefinedName@\expandafter{\asciiCmdName}%
+                    \lexTokens@}%
+    % Next, check if it's left or right:
+    \else\ifx\asciiCmdName\leftName@\def\next{\lexDelim@\startParen}%
+    \else\ifx\asciiCmdName\rightName@\def\next{\lexDelim@\endParen}%
     % Otherwise, check if it's set as a normal macro:
     \else\expandafter\ifcsname\the\csNameStr@\endcsname
         \def\next{%
             \expandafter\expandafter\expandafter
                 \addBlock@\expandafter\csname\the\csNameStr@\endcsname
+                \lexTokens@
         }%
     \else\def\next{%
             \errmessage{Oops, command "\the\csNameStr@" is not defined!}\end
         }%
-    \fi\fi\next
+    \fi\fi\fi\fi\next
 }
 
 \def\addPredefinedName@#1{%
@@ -181,6 +187,10 @@
 \def\addPredefinedNameA@#1#2{%
     \addLexed@{\asciiCmd{#1}{#2}}%
 }
+
+% TODO: I'd like to be able to peek first, but I can't figure out how
+% to get the delcode of a token.
+\def\lexDelim@#1#2{\addLexed@{#1{#2}}\lexTokens@}%
 
 %%%%%%%%%%%%%%
 %% Parsing lexed tokens into a large structure
