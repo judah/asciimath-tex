@@ -278,7 +278,7 @@
 \def\doSupscriptA@#1#2{%
     \ifx1#1% minus sign
         \def\useT##1##2##3{%
-            \def\useBlock####1{\useS0{}{#2^{####1}}}%
+            \def\useBlock####1{\useS0{}{#2^{-####1}}}%
             \renderBlock@##1{##2}{##3}%
         }%
     \else
