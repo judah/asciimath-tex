@@ -255,40 +255,33 @@
 }
 
 % Reads an S nonterminal and passes the result to useS.
-\def\readS@{%
+\def\readS@{\let\useT=\addSubSupScript@\readT@}
+
+% Given an already-read block, read more ^ and _ if possible.
+% Note: if they do eg x_y_y it will parse and TeX will complain, but
+% it's the same error they'd get with $..$.
+\def\addSubSupScript@#1#2#3{%
+    \ifNextTokIs@_%
+        {\def\useBlock{\doSubSupScript@_}\renderBlock@#1{#2}{#3}}%
+        {\ifNextTokIs@^%
+            {\def\useBlock{\doSubSupScript@^}\renderBlock@#1{#2}{#3}}%
+            {\useS#1{#2}{#3}}}%
+}
+
+% #1 is _ or ^.  #2 is the rendered base.
+\def\doSubSupScript@#1#2{\ifNextTokIs@-%
+    {\doNegatedScript@#1{#2}}%
+    {\doSimpleScript@#1{#2}}%
+}
+\def\doNegatedScript@#1#2{%
     \def\useT##1##2##3{%
-        \ifNextTokIs@_%
-            {\let\useBlock=\doSubscript@\renderBlock@##1{##2}{##3}}%
-            {\ifNextTokIs@^%
-                {\let\useBlock=\doSupscript@\renderBlock@##1{##2}{##3}}%
-                {\useS##1{##2}{##3}}}%
+        \def\useBlock####1{\addSubSupScript@0{}{#2#1{-####1}}}%
+        \renderBlock@##1{##2}{##3}%
     }%
     \readT@
 }
-\def\doSubscript@#1{%
-    \def\useT##1##2##3{%
-        \ifNextTokIs@^%
-            {\doSupscript@{#1_{##3}}}%
-            {\useS0{}{#1_{##3}}}%
-    }\readT@
-}
-% First, read an optional minus sign.
-\def\doSupscript@#1{%
-    \ifNextTokIs@-%
-        {\doSupscriptA@1{#1}}%
-        {\doSupscriptA@0{#1}}%
-}
-\def\doSupscriptA@#1#2{%
-    \ifx1#1% minus sign
-        \def\useT##1##2##3{%
-            \def\useBlock####1{\useS0{}{#2^{-####1}}}%
-            \renderBlock@##1{##2}{##3}%
-        }%
-    \else
-        \def\useT##1##2##3{%
-            \useS0{}{#2^{##3}}%
-        }%
-    \fi
+\def\doSimpleScript@#1#2{%
+    \def\useT##1##2##3{\addSubSupScript@0{}{#2#1{##3}}}%
     \readT@
 }
 
