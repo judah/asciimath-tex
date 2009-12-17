@@ -41,7 +41,15 @@
 % We can't just set the catcodes of ^ and _ because we want them as letters
 % in the \tt but as super/subscripts in the `...`.
 \def\sanitizeVerbose{\futurelet\nextTok\sanitizeVerboseA}
-\def\sanitizeVerboseA#1{%
+\def\sanitizeVerboseA{%
+    \ifx\nextTok\bgroup\let\next=\sanitizeGroupAndRepeat
+    \else\let\next=\sanitizeVerboseB
+    \fi\next
+}
+\def\sanitizeGroupAndRepeat#1{%
+    \{\sanitizeVerbose#1\end\}\sanitizeVerbose
+}
+\def\sanitizeVerboseB#1{%
     \ifx#1\end\let\next=\relax
     \else\ifx#1^\def\next{\char94\sanitizeVerbose}%
     \else\ifx#1_\def\next{\char95\sanitizeVerbose}%
@@ -150,6 +158,23 @@ test of the package.
 \testRow{(2+3)/sqrt sqrt sqrt 3}
 \testRow{root n (x^2+1)}
 \testRow{(-b pm sqrt(b^2-4a c))/(2a)}
+\end{examples}
+
+
+\par
+\newcommand\norm[1]{\left|\left|#1\right|\right|}
+In the next example, assume that we've defined:
+\begin{verbatim}
+\newcommand\norm[1]{\left|\left|#1\right|\right|}
+\end{verbatim}
+\begin{examples}{Braces and user-defined macros}
+%\rawExampleRow{ehh}{`t{2+alpha}^2`}
+\testRow{norm {x}}
+\testRow{norm{(x)}}
+\testRow{norm { x-y}^2+z}
+\testRow{t*{2+alpha}^2}
+\testRow{t*{(2+alpha)}^2}
+\testRow{ {2+x}/{gamma^2beta}}
 \end{examples}
 
 \end{section}

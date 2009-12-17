@@ -30,12 +30,16 @@
 \newtoks\parsedTokens@
 
 \def\startParse@#1`{%
+    \def\useParse##1{\mathdelim##1\mathdelim\endgroup}%
+    \runParse@{#1}%
+}
+
+\def\runParse@#1{%
     \lexedTokens@={}\lexTokens@#1\endScan@
-    %\message{Lexed: \the\lexedTokens@.}%
+    \message{Lexed: \the\lexedTokens@.}%
     \expandafter\readOList@\the\lexedTokens@\endScan@
-    %\message{Parsed: \the\parsedTokens@.}%
-    \mathdelim\the\parsedTokens@\mathdelim
-    \endgroup
+    \message{Parsed: \the\parsedTokens@.}%
+    \expandafter\useParse\expandafter{\the\parsedTokens@}%
 }
 
 % sentinel value
@@ -55,11 +59,21 @@
 \gdef\sspace@{ }
 \endgroup
 
-% TODO handle braces correctly
-% Idea: temp turn them into active chars.
-% (eventually might actually want this...)
-\def\lexTokens@#1{%
-    % ???? TODO ????
+\def\lexTokens@{\futurelet\nextTok\lexTokensA@}
+% First, check if the next token starts a {...} subexpression :
+\def\lexTokensA@{%
+    \ifx\nextTok\bgroup\let\next=\lexTokenGroup@
+    \else\let\next=\lexTokensB@
+    \fi\next
+}
+
+\def\lexTokenGroup@#1{%
+    \begingroup
+    \def\useParse##1{\endgroup\addLexed@{\subblock{##1}}\lexTokens@}%
+    \runParse@{#1}
+}
+
+\def\lexTokensB@#1{%
     \ifx#1\endScan@\let\next=\relax
     \else\if\sspace@\noexpand#1\let\next=\lexTokens@% ignore spaces
     \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS@#1}%
@@ -183,6 +197,7 @@
 %                   subexpr of a fraction, exponent, etc., and 0 otherwise.
 %               #2 is eg "()" or "[)" if this should be wrapped
 %               #3 is the internals of the block.
+% \subblock#1: block of stuff surrounded by {}.  Treated like a <block>.
 % \startParen#1: #1 is '(', '[', etc.
 % \endParen#1: #1 is ')', ']', etc.
 % \asciiCmd#1#2: #1 is code, #2 is number of args.
@@ -199,6 +214,7 @@
     \def\startParen{\readO@\startParen}%
     \def\endParen##1{\errmessage{Oops; found an unmatched "##1".}\end}%
     \def\asciiCmd{\readO@\asciiCmd}%
+    \def\subblock{\readO@\subblock}%
 }
 
 \def\readOList@{%
@@ -294,13 +310,16 @@
     \else\ifx#1-\def\next{\useT0{}{#1}}%
     \else\ifx#1\startParen\let\next=\readTParen@
     \else\ifx#1\asciiCmd\let\next=\readTASCIICmd@
+    \else\ifx#1\subblock\let\next=\parseSubblock@
     \else\ifx#1/\def\next{\useT0{}{#1}}%
     \else\def\next{\errmessage{Oops: ran into a non-block:\noexpand#1}\end}%
-    \fi\fi\fi\fi\fi
+    \fi\fi\fi\fi\fi\fi
     \next
 }
 
 \def\readTBlock@#1#2#3{\useT#1{#2}{#3}}
+
+\def\parseSubblock@#1{\useT0{}{{#1}}}
 
 % OK, this uses a couple of tricks:
 % 1) The #1 of asciiCmdLoop@ is a partial application of the macro.
@@ -362,7 +381,7 @@
 %
 % A macro which takes no arguments (for example, \alpha or \Sum) can always
 % be referred to by name.  And a build-in macro like \sqrt will work.  But
-% other macros which take an argumetn will not work by default.
+% other macros which take an argument will not work by default.
 %
 % The following macro tells the ASCIIMath engine that a macro takes arguments:
 % It works by setting a corresponding macro name which the engine will look up.
