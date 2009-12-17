@@ -8,19 +8,22 @@
     #1=\expandafter{\tmpA#2}%
 }
 
+% Do this before setting the catcode of `, so we can refer to "`\@".
+\def\setupASCII@{%
+    \begingroup
+    \catcode32=\active
+    \def\sspace{ }% Do it here so the inside space is lexed as active
+    \ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
+    \newlinechar=`\@\relax
+    \defineTokTypes@
+}
+
 \catcode96=13%
 \def`{%
     \setupASCII@
     \ifNextTokIs@`%
         {\endgroup\char96\char96}%
         {\startParse@}%
-}
-\def\setupASCII@{%
-    \begingroup
-    \catcode32=\active
-    \def\sspace{ }% Do it here so the inside space is lexed as active
-    \ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
-    \defineTokTypes@
 }
 
 \newtoks\lexedTokens@
@@ -36,9 +39,9 @@
 
 \def\runParse@#1{%
     \lexedTokens@={}\lexTokens@#1\endScan@
-    \message{Lexed: \the\lexedTokens@.}%
+    \message{Lexed: \the\lexedTokens@.@}%
     \expandafter\readOList@\the\lexedTokens@\endScan@
-    \message{Parsed: \the\parsedTokens@.}%
+    \message{Parsed: \the\parsedTokens@.@}%
     \expandafter\useParse\expandafter{\the\parsedTokens@}%
 }
 
