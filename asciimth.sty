@@ -73,15 +73,20 @@
     \runParse@{#1}
 }
 
+\let\lbraceTok@=\{
+\let\rbraceTok@=\}
+
 \def\lexTokensB@#1{%
     \ifx#1\endScan@\let\next=\relax
     \else\if\sspace@\noexpand#1\let\next=\lexTokens@% ignore spaces
     \else\ifcat\noexpand#1a\def\next{\parseLetterOrCS@#1}%
     \else\ifcat\noexpand#1^\def\next{\addLexed@{^}\lexTokens@}%
     \else\ifcat\noexpand#1_\def\next{\addLexed@{_}\lexTokens@}%
+    \else\ifx#1\lbraceTok@\def\next{\addLexed@{\startParen{\lbraceTok@}}\lexTokens@}%
+    \else\ifx#1\rbraceTok@\def\next{\addLexed@{\endParen{\rbraceTok@}}\lexTokens@}%
     \else\ifcat\noexpand#1/\def\next{\processOtherChar@#1}%
     \else\def\next{\addBlock@{#1}\lexTokens@}%
-    \fi\fi\fi\fi\fi\fi
+    \fi\fi\fi\fi\fi\fi\fi\fi
     \next
 }%
 
@@ -358,22 +363,26 @@
 \def\readTParen@#1{%
     \def\parenStarter{#1}%
     \parenContents@={}%
-    \loopForEndParen@
+    \loopForEndParen@%
 }
 
-\def\loopForEndParen@{\ifNextTokIs@\endParen\finishParen@\readMoreParenContents@}
+\def\loopForEndParen@{\ifNextTokIs@\endParen
+    {\expandafter\finishParen@\parenStarter}%
+    {\readMoreParenContents@}%
+}
 \def\readMoreParenContents@{%
     \begingroup
     \def\useO##1{%
             \endgroup
             \appendToks@\parenContents@{##1}%
-            \loopForEndParen@
+            \loopForEndParen@%
     }%
     \readO@
 }
-\def\finishParen@#1{%
-    \edef\todo{\noexpand\useT1{\parenStarter#1}{\the\parenContents@}}%
-    \todo
+\def\finishParen@#1#2{%
+    \expandafter\useT\expandafter1\expandafter{%
+        \expandafter#1\expandafter#2\expandafter}%
+        \expandafter{\the\parenContents@}%
 }
 
 %%%%%%%%%%%%%

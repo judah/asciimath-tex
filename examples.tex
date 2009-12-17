@@ -23,7 +23,7 @@
     \changeSpacesBack
     \exampleRow{\sanitizeVerbose#1\end}{`#1`}%
 }
-    
+
 \def\exampleRow#1#2{%
     {\tt\char18#1\char18}%
     %& #2\tabularnewline%
@@ -167,14 +167,15 @@ In the next example, assume that we've defined:
 \begin{verbatim}
 \newcommand\norm[1]{\left|\left|#1\right|\right|}
 \end{verbatim}
+\startTrace
 \begin{examples}{Braces and user-defined macros}
-%\rawExampleRow{ehh}{`t{2+alpha}^2`}
 \testRow{norm {x}}
 \testRow{norm{(x)}}
 \testRow{norm { x-y}^2+z}
 \testRow{t*{2+alpha}^2}
 \testRow{t*{(2+alpha)}^2}
 \testRow{ {2+x}/{gamma^2beta}}
+\testRow{ \{2/(x+y)\}^3}
 \end{examples}
 
 \end{section}
