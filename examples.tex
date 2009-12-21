@@ -13,10 +13,12 @@
 \catcode32=13%
 \gdef\changeSpaces{%
 \catcode32=13%
+\catcode126=12
 \let =\ %
 }
 \endgroup
-\def\changeSpacesBack{\catcode32=10}
+%HACK
+\def\changeSpacesBack{\catcode32=10\catcode126=13}
 
 \def\testRow{\hline\changeSpaces\testRowA}
 \def\testRowA#1{%
@@ -161,6 +163,13 @@ test of the package.
 \testRow{(2+3)/sqrt sqrt sqrt 3}
 \testRow{root n (x^2+1)}
 \testRow{(-b pm sqrt(b^2-4a c))/(2a)}
+\end{examples}
+
+\begin{examples}{Symbols}
+\testRow{a_1...a_n}
+\testRow{a_1,...,a_n}
+\testRow{f:bb(R)^2->bb(R)}
+\testRow{>= <= => != -= ~ ~= ~~ ~-}
 \end{examples}
 
 

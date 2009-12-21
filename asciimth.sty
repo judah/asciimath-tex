@@ -11,7 +11,8 @@
 % Do this before setting the catcode of `, so we can refer to "`\@".
 \def\setupASCII@{%
     \begingroup
-    \catcode32=\active
+    \catcode32=\active% space
+    \catcode126=12% "~"
     \def\sspace{ }% Do it here so the inside space is lexed as active
     \ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
     \newlinechar=`\$\relax
@@ -99,11 +100,10 @@
     \else\ifx#1[\def\next{\addLexed@{\startParen[}\lexTokens@}%
     \else\ifx#1)\def\next{\addLexed@{\endParen)}\lexTokens@}%
     \else\ifx#1]\def\next{\addLexed@{\endParen]}\lexTokens@}%
-    \else\ifx#1-\def\next{\addLexed@{-}\lexTokens@}%
     \else
         \ifisdigitchar@#1{\def\next{\scanNumber@{#1}}}%
-            {\def\next{\addBlock@{#1}\lexTokens@}}%
-    \fi\fi\fi\fi\fi\fi
+            {\def\next{\scanOtherChars@{#1}}}%
+    \fi\fi\fi\fi\fi
     \next
 }
 
@@ -180,6 +180,48 @@
         }%
     \fi\fi\fi\fi\next
 }
+
+% If the longest possible sequence of "other" characters is defined,
+% set it to a name.
+% Otherwise, output each as a block (though any "-" should be on their own).
+% 
+\def\scanOtherChars@#1{\csNameStr@={#1}\loopOtherChars@}
+\def\loopOtherChars@{\futurelet\nextTok\loopOtherCharsA@}
+\def\loopOtherCharsA@{%
+    \ifcat\noexpand\nextTok+
+        % TODO: annoying to duplicate the list from processOtherChar@ here.
+        \ifx\nextTok/\let\next=\processOtherChars@
+        \else\ifx\nextTok(\let\next=\processOtherChars@
+        \else\ifx\nextTok[\let\next=\processOtherChars@
+        \else\ifx\nextTok)\let\next=\processOtherChars@
+        \else\ifx\nextTok]\let\next=\processOtherChars@
+        \else\ifisdigitchar@\nextTok{\let\next=\processOtherChars@}%
+                                {\let\next=\addOtherToCS@}%
+        \fi\fi\fi\fi\fi
+    \else\let\next=\processOtherChars@
+    \fi\next
+}
+\def\addOtherToCS@#1{\appendToks@\csNameStr@#1\loopOtherChars@}
+\def\processOtherChars@{%
+    \edef\asciiCmdName{@\the\csNameStr@ @asciimacro@}%
+    % First, check whether this name has been set with \addASCIIMathCmd:
+    \expandafter\ifcsname\asciiCmdName\endcsname
+        \def\next{\expandafter\addPredefinedName@\expandafter{\asciiCmdName}}%
+    % Otherwise, emit each token in turn:
+    \else\def\next{\expandafter\emitLoneOtherChars@%
+                        \the\csNameStr@\endScan@}%
+    \fi\next\lexTokens@
+}
+% TODO: have to dupe processOtherChar@ here...
+% Annoying.  Must be better abstraction.
+\def\emitLoneOtherChars@#1{%
+    \ifx#1\endScan@\let\next=\relax
+    \else\ifx#1-\def\next{\addLexed@{-}\emitLoneOtherChars@}%
+    \else\def\next{\addBlock@{#1}\emitLoneOtherChars@}%
+    \fi\fi\next
+}
+    
+    
 
 \def\addPredefinedName@#1{%
     \expandafter\expandafter\expandafter\addPredefinedNameA@\csname#1\endcsname
@@ -420,3 +462,23 @@
 \addASCIIMathCmd{root}{2}{\myrootn@}
 \addASCIIMathCmd{bb}{1}{\mathbb}
 \addASCIIMathCmd{hat}{1}{\hat}
+
+% Symbols
+\addASCIIMathCmd{,...,}{0}{,\ldots,}
+\addASCIIMathCmd{,...}{0}{,\ldots}
+\addASCIIMathCmd{...,}{0}{\ldots,}
+\addASCIIMathCmd{...}{0}{\cdots}
+\addASCIIMathCmd{->}{0}{\to}
+\addASCIIMathCmd{>=}{0}{\ge}
+\addASCIIMathCmd{<=}{0}{\le}
+\addASCIIMathCmd{=>}{0}{\implies}
+\addASCIIMathCmd{!=}{0}{\ne}
+\addASCIIMathCmd{-=}{0}{\equiv}
+
+\begingroup
+\catcode126=12\relax% "~"
+\addASCIIMathCmd{~}{0}{\sim}
+\addASCIIMathCmd{~=}{0}{\cong}
+\addASCIIMathCmd{~~}{0}{\approx}
+\addASCIIMathCmd{~-}{0}{\simeq}
+\endgroup
