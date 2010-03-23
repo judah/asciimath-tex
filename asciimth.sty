@@ -188,7 +188,7 @@
 \def\scanOtherChars@#1{\csNameStr@={#1}\loopOtherChars@}
 \def\loopOtherChars@{\futurelet\nextTok\loopOtherCharsA@}
 \def\loopOtherCharsA@{%
-    \ifcat\noexpand\nextTok+
+    \ifcat\noexpand\nextTok+%
         % TODO: annoying to duplicate the list from processOtherChar@ here.
         \ifx\nextTok/\let\next=\processOtherChars@
         \else\ifx\nextTok(\let\next=\processOtherChars@
