@@ -40,9 +40,9 @@
 
 \def\runParse@#1{%
     \lexedTokens@={}\lexTokens@#1\endScan@
-    \message{Lexed: \the\lexedTokens@.$}%
+    %\message{Lexed: \the\lexedTokens@.$}%
     \expandafter\readOList@\the\lexedTokens@\endScan@
-    \message{Parsed: \the\parsedTokens@.$}%
+    %\message{Parsed: \the\parsedTokens@.$}%
     \expandafter\useParse\expandafter{\the\parsedTokens@}%
 }
 
