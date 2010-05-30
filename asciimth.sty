@@ -100,10 +100,11 @@
     \else\ifx#1[\def\next{\addLexed@{\startParen[}\lexTokens@}%
     \else\ifx#1)\def\next{\addLexed@{\endParen)}\lexTokens@}%
     \else\ifx#1]\def\next{\addLexed@{\endParen]}\lexTokens@}%
+    \else\ifx#1"\let\next\scanRomanText@%
     \else
         \ifisdigitchar@#1{\def\next{\scanNumber@{#1}}}%
             {\def\next{\scanOtherChars@{#1}}}%
-    \fi\fi\fi\fi\fi
+    \fi\fi\fi\fi\fi\fi
     \next
 }
 
@@ -114,6 +115,8 @@
     \fi
     \next
 }
+
+\def\scanRomanText@#1"{\addBlock@{\text{#1}}\lexTokens@}
 
 % There must be a more efficient way to do this...
 \newif\ifisDigitCharCond@
