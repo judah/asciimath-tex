@@ -1,7 +1,7 @@
 \NeedsTeXFormat{LaTeX2e}[1994/12/01]
 \ProvidesPackage{asciimth}[2009/12/11 v0.1 ASCIIMath support for LaTeX]
-\RequirePackage{amsfonts}% for \mathbb
-
+\RequirePackage{amsmath}% for \matrix, others?
+\RequirePackage{amsfonts}% for \mathbb et. al.
 
 \def\appendToks@#1#2{%
     \edef\tmpA{\the#1}%
@@ -16,6 +16,8 @@
     \newlinechar=`\$\relax
     \defineTokTypes@
 }
+
+\def\setGoodStuff
 
 \catcode96=13%
 \def`{%
