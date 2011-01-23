@@ -201,10 +201,14 @@ Unlike for other commands, curly braces must be used for {\tt raw}.
 This command is also useful for adding commands like \verb|\label| inside of an 
 {\tt alignA} environment.
 
+\def\textbs{\char92\relax} % backslash
 \begin{examples}{Braces and raw commands}
 \testRow{2^(3+y) + raw{\frac{5}{6x}}}
 \testRow{2^raw{\frac78}}
-%\testRow{2 / raw{\begin{pmatrix}2\\3\end{pmatrix}}}
+\rawExampleRow
+{\relax2 + raw\{\textbs{}begin\{pmatrix\}2\textbs\textbs3
+\textbs{}end\{pmatrix\}\}}
+{`2 / raw{\begin{pmatrix}2\\3\end{pmatrix}}`}
 \testRow{t*{2+alpha}^2}
 \testRow{t*{(2+alpha)}^2}
 \testRow{ {2+x}/{gamma^2beta}}
