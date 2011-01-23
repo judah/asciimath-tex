@@ -59,8 +59,47 @@
 % Scans everything until the next \end{..},
 % and calls \runParse@ on it.
 % Callers of this should set \useParse@.
-% TODO: check it ends the right thing.
-\def\collectInput@#1\end#2{\runParse@{#1}}
+% Correctly handles nested environments, using tricks that I learned/borrowed
+% from the amsmath package.
+\def\collectInput@{%
+    \asciiInput@={}%
+    \def\bStack{bx}%
+    \def\emptyStack{x}
+    \loopCollectInput@
+}
+
+\newtoks\asciiInput@
+\def\addAsciiInput@#1{%
+    \edef\tmpA{\the\asciiInput@}%
+    \global\asciiInput@=\expandafter{\tmpA#1}%
+}
+
+% Usage: \pushBegins@...\begin\end
+% (internals is assumed to not contain an end)
+% Expands to a sequence of b's, one for each \begin in the "..."
+\def\scanBegins@#1\begin#2{%
+    \ifx\end#2\else b\expandafter\scanBegins@\fi
+}
+\def\gobbleOne@#1{}
+
+\def\loopCollectInput@#1\end#2{%
+    % Turn all of the begins in #1 into b's, add them to the stack,
+    % and delete one b from the stack.
+    \edef\bStack{\scanBegins@#1\begin\end\expandafter\gobbleOne@\bStack}
+    % If the stack is empty, we're done.
+    % Otherwise, we need to read more \ends, so keep going.
+    \ifx\bStack\emptyStack
+        \addAsciiInput@{#1}%
+        \def\next{\expandafter\runParse@\expandafter{\the\asciiInput@}}%
+    \else
+        \addAsciiInput@{#1\end{#2}}%
+        \loopCollectorInput@
+    \fi
+    \next
+}
+
+
+%\def\collectInput@#1\end#2{\runParse@{#1}}
 
 \newMathEnv@{alignA}{align}
 \newMathEnv@{alignA*}{align*}
