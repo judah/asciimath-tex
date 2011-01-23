@@ -162,6 +162,7 @@
 
 \def\leftName@{@left@asciimacro@}
 \def\rightName@{@right@asciimacro@}
+\def\matrixName@{@matrix@asciimacro@}
 \def\emitCSAndLex@{%
     \edef\asciiCmdName{@\the\csNameStr@ @asciimacro@}%
     % First, check whether this name has been set with \addASCIIMathCmd:
@@ -171,6 +172,8 @@
     % Next, check if it's left or right:
     \else\ifx\asciiCmdName\leftName@\def\next{\lexDelim@\startParen}%
     \else\ifx\asciiCmdName\rightName@\def\next{\lexDelim@\endParen}%
+    % Next, check if it's the start of a matrix:
+    \else\ifx\asciiCmdName\matrixName@\def\next{\addLexed@\startMatrix\lexTokens@}%
     % Otherwise, check if it's set as a normal macro:
     \else\expandafter\ifcsname\the\csNameStr@\endcsname
         \def\next{%
@@ -181,7 +184,7 @@
     \else\def\next{%
             \errmessage{Oops, command "\the\csNameStr@" is not defined!}\end
         }%
-    \fi\fi\fi\fi\next
+    \fi\fi\fi\fi\fi\next
 }
 
 % If the longest possible sequence of "other" characters is defined,
@@ -220,8 +223,10 @@
 \def\emitLoneOtherChars@#1{%
     \ifx#1\endScan@\let\next=\relax
     \else\ifx#1-\def\next{\addLexed@{-}\emitLoneOtherChars@}%
+    \else\ifx#1,\def\next{\addLexed@{,}\emitLoneOtherChars@}%
+    \else\ifx#1;\def\next{\addLexed@{;}\emitLoneOtherChars@}%
     \else\def\next{\addBlock@{#1}\emitLoneOtherChars@}%
-    \fi\fi\next
+    \fi\fi\fi\fi\next
 }
     
     
@@ -262,6 +267,7 @@
 % \subblock#1: block of stuff surrounded by {}.  Treated like a <block>.
 % \startParen#1: #1 is '(', '[', etc.
 % \endParen#1: #1 is ')', ']', etc.
+% \startMatrix: A parenthesized expression follows.
 % \asciiCmd#1#2: #1 is code, #2 is number of args.
 % 
 % These definitions should never actually be expanded.  However, they
@@ -270,6 +276,7 @@
     \def\block{\readO@\block}%
     \def\startParen{\readO@\startParen}%
     \def\endParen##1{\errmessage{Oops; found an unmatched "##1".}\end}%
+    \def\startMatrix{\readO@\startMatrix}%
     \def\asciiCmd{\readO@\asciiCmd}%
     \def\subblock{\readO@\subblock}%
 }
@@ -358,12 +365,15 @@
 \def\readT@#1{%
     \ifx#1\block\let\next=\readTBlock@
     \else\ifx#1-\def\next{\useT0{}{#1}}%
+    \else\ifx#1,\def\next{\useT0{}{#1}}%
+    \else\ifx#1;\def\next{\useT0{}{#1}}%
     \else\ifx#1\startParen\let\next=\readTParen@
+    \else\ifx#1\startMatrix\let\next=\readTMatrix@
     \else\ifx#1\asciiCmd\let\next=\readTASCIICmd@
     \else\ifx#1\subblock\let\next=\parseSubblock@
     \else\ifx#1/\def\next{\useT0{}{#1}}%
     \else\def\next{\errmessage{Oops: ran into a non-block:\noexpand#1}\end}%
-    \fi\fi\fi\fi\fi\fi
+    \fi\fi\fi\fi\fi\fi\fi\fi\fi
     \next
 }
 
@@ -429,6 +439,55 @@
         \expandafter#1\expandafter#2\expandafter}%
         \expandafter{\the\parenContents@}%
 }
+
+% Read matrices, basically the same way as for parentheses. 
+% (TODO: don't duplicate so much code.)
+% The lexer is supposed to return:
+% \startMatrix\startParen(...\endParen)
+% where the stuff inside of the ... is a sequence of O's, commas and semicolons.
+% Each comma/semicolon is replaced by "&" or "\\".
+\def\readTMatrix@\startParen#1{%
+    \def\parenStarter{#1}%
+    \parenContents@={}%
+    \loopTillEndMatrix@
+}
+
+\def\loopTillEndMatrix@{\futurelet\nextTok\loopTillEndMatrixA@}
+\def\loopTillEndMatrixA@{%
+    \ifx\nextTok\endParen
+        \def\next##1##2{\expandafter\finishMatrix@\parenStarter##2}%
+    \else\ifx\nextTok,%
+        \def\next##1{\appendToks@\parenContents@{&}\loopTillEndMatrix@}%
+    \else\ifx\nextTok;%
+        \def\next##1{\appendToks@\parenContents@{\\}\loopTillEndMatrix@}%
+    \else\def\next{\anotherMatrixElt@}%
+    \fi\fi\fi
+    \next
+}
+
+\def\anotherMatrixElt@{%
+    \begingroup
+    \def\useO##1{%
+        \endgroup
+        \appendToks@\parenContents@{##1}%
+        \loopTillEndMatrix@
+    }%
+    \readO@
+}
+
+\def\amBeginMatrix@{\begin{matrix}}
+\def\amEndMatrix@{\end{matrix}}
+
+% matrix(a,b,c) should expand to:
+% \useT 1{()}{\amBeginMatrix@ a&b&c \amEndMatrix@}
+\def\finishMatrix@#1#2{%
+    \expandafter\useT\expandafter1%
+        \expandafter{\expandafter#1\expandafter#2\expandafter}%
+        \expandafter{\expandafter\amBeginMatrix@\the\parenContents@
+        \amEndMatrix@}%
+}
+
+
 
 %%%%%%%%%%%%%
 % Using TeX macros inside of ASCIIMath:
