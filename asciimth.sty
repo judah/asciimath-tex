@@ -17,9 +17,10 @@
     \defineTokTypes@
 }
 
-\def\setGoodStuff
+\def\makeQuoteActive{\catcode96=13}
+\def\makeQuoteOther{\catcode96=12}
 
-\catcode96=13%
+\makeQuoteActive
 \def`{%
     \begingroup
     \setupASCII@
