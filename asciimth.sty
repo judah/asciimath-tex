@@ -47,7 +47,8 @@
 }
 
 % sentinel value
-\def\endScan@{\errmessage{Oops, went over the end!}\endScan@}
+% Since we do comparisons, I try to make sure this is unique.
+\def\endScan@{\errmessage{Oops, went over the end!}\let\fooAM@=\endScan@}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Lexing
@@ -182,7 +183,7 @@
                 \lexTokens@
         }%
     \else\def\next{%
-            \errmessage{Oops, command "\the\csNameStr@" is not defined!}\end
+            \errmessage{Oops, command "\the\csNameStr@" is not defined!}
         }%
     \fi\fi\fi\fi\fi\next
 }
@@ -275,7 +276,7 @@
 \def\defineTokTypes@{%
     \def\block{\readO@\block}%
     \def\startParen{\readO@\startParen}%
-    \def\endParen##1{\errmessage{Oops; found an unmatched "##1".}\end}%
+    \def\endParen##1{\errmessage{Oops; found an unmatched "##1".}}%
     \def\startMatrix{\readO@\startMatrix}%
     \def\asciiCmd{\readO@\asciiCmd}%
     \def\subblock{\readO@\subblock}%
