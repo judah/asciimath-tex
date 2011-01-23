@@ -10,17 +10,16 @@
 
 % Do this before setting the catcode of `, so we can refer to "`\@".
 \def\setupASCII@{%
-    \begingroup
     \catcode32=\active% space
     \catcode126=12% "~"
     \def\sspace{ }% Do it here so the inside space is lexed as active
-    \ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
     \newlinechar=`\$\relax
     \defineTokTypes@
 }
 
 \catcode96=13%
 \def`{%
+    \begingroup
     \setupASCII@
     \ifNextTokIs@`%
         {\endgroup\char96\char96}%
@@ -34,6 +33,7 @@
 \newtoks\parsedTokens@
 
 \def\startParse@#1`{%
+    \ifmmode\let\mathdelim=\relax\else\let\mathdelim=$\fi
     \def\useParse##1{\mathdelim##1\mathdelim\endgroup}%
     \runParse@{#1}%
 }
@@ -45,6 +45,27 @@
     %\message{Parsed: \the\parsedTokens@.$}%
     \expandafter\useParse\expandafter{\the\parsedTokens@}%
 }
+
+% Usage: \newMathEnv{alignA*}{align*}
+% Defines a new math environment that takes ASCIIMath input.
+\def\newMathEnv@#1#2{%
+    \newenvironment{#1}{%
+        \begingroup\setupASCII@
+        \def\useParse####1{\begin{#2}####1\end{#2}\endgroup\end{#1}}%
+        \collectInput@
+    }{}%
+}
+
+% Scans everything until the next \end{..},
+% and calls \runParse@ on it.
+% Callers of this should set \useParse@.
+% TODO: check it ends the right thing.
+\def\collectInput@#1\end#2{\runParse@{#1}}
+
+\newMathEnv@{alignA}{align}
+\newMathEnv@{alignA*}{align*}
+\newMathEnv@{asciimth}{equation}
+\newMathEnv@{asciimth*}{equation*}
 
 % sentinel value
 % Since we do comparisons, I try to make sure this is unique.
