@@ -96,6 +96,15 @@ $\frac{1}{2}-`3/4`$.  It can also be embedded into display math
 For compatibility with the common use of left-quotes, the empty expression 
 {\tt\char18\char18} is typeset as the begin-quotes symbol (``).
 
+We also provide a few environments to replace those provided by LaTeX and amsmath:
+\begin{itemize}
+\item The {\tt asciimth} and {\tt asciimth*} environments act like {\tt equation} and {\tt
+equation*}, except that the math inside uses the asciimth syntax.
+\item The {\tt alignA} and {\t alignA*} environments act like {\tt align} and {\tt align*}:
+formatting is done by \verb|&| and \verb|\\|, but the math inside is written using {\tt
+asciimth}'s syntax.
+\end{itemize}
+
 This document displays a range of example equations as typeset by {\tt
 asciimth}.  It serves both as documentation and as a comprehensive
 test of the package.
@@ -208,30 +217,29 @@ Finally, as an example of the various ways in which you can use this package, we
 present a formula for the root of a cubic polynomial (via Wikipedia):
 
 When `x^3+a x^2+b x+c`, one of the roots is
-\[`
--1/3(a
-+root3((m+sqrt(m^2-4k^3))/2)
-+root3((m-sqrt(m^2-4k^3))/2))
-`\]
+\begin{asciimth*}
+-1/3( a +root3( (m + sqrt(m^2-4k^3) ) / 2 )
+        +root3( (m - sqrt(m^2-4k^3) ) / 2 ))
+\end{asciimth*}
 where:
-\begin{align*}
-m&=`2a^3-9a`,\\
-k&=`a^2-3b`.\\
-\end{align*}
+\begin{alignA*}
+m &= 2a^3-9a,\\
+k &= a^2-3b.
+\end{alignA*}
+
 
 The above text was typeset via:
 \begin{verbatim}
 When `x^3+a x^2+b x+c`, one of the roots is
-\[`
--1/3(a
-+root3((m+sqrt(m^2-4k^3))/2)
-+root3((m-sqrt(m^2-4k^3))/2))
-`\]
+\begin{asciimth*}
+-1/3( a +root3( (m + sqrt(m^2-4k^3) ) / 2 )
+        +root3( (m - sqrt(m^2-4k^3) ) / 2 ))
+\end{asciimth*}
 where:
-\begin{align*}
-m&=`2a^3-9a`,\\
-k&=`a^2-3b`,\\
-\end{align*}
+\begin{alignA*}
+m &= 2a^3-9a,\\
+k &= a^2-3b.
+\end{alignA*}
 \end{verbatim}
 
 \end{section}
