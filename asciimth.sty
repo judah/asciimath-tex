@@ -185,6 +185,7 @@
 \def\leftName@{@left@asciimacro@}
 \def\rightName@{@right@asciimacro@}
 \def\matrixName@{@matrix@asciimacro@}
+\def\rawName@{@raw@asciimacro@}
 \def\emitCSAndLex@{%
     \edef\asciiCmdName{@\the\csNameStr@ @asciimacro@}%
     % First, check whether this name has been set with \addASCIIMathCmd:
@@ -196,6 +197,8 @@
     \else\ifx\asciiCmdName\rightName@\def\next{\lexDelim@\endParen}%
     % Next, check if it's the start of a matrix:
     \else\ifx\asciiCmdName\matrixName@\def\next{\addLexed@\startMatrix\lexTokens@}%
+    % Next, check if it's a "raw" command:
+    \else\ifx\asciiCmdName\rawName@\def\next##1{\addBlock@{##1}\lexTokens@}%
     % Otherwise, check if it's set as a normal macro:
     \else\expandafter\ifcsname\the\csNameStr@\endcsname
         \def\next{%
@@ -206,7 +209,7 @@
     \else\def\next{%
             \errmessage{Oops, command "\the\csNameStr@" is not defined!}
         }%
-    \fi\fi\fi\fi\fi\next
+    \fi\fi\fi\fi\fi\fi\next
 }
 
 % If the longest possible sequence of "other" characters is defined,
