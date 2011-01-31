@@ -56,8 +56,9 @@
         \begingroup\setupASCII@
         \def\useParse####1{\begin{#2}####1\end{#2}\endgroup\end{#1}}%
         \collectInput@
-    }{}%
+    }{\ignorespacesafterend}%
 }
+
 
 % Scans everything until the next \end{..},
 % and calls \runParse@ on it.
@@ -67,7 +68,7 @@
 \def\collectInput@{%
     \asciiInput@={}%
     \def\bStack{bx}%
-    \def\emptyStack{x}
+    \def\emptyStack{x}%
     \loopCollectInput@
 }
 
@@ -88,7 +89,7 @@
 \def\loopCollectInput@#1\end#2{%
     % Turn all of the begins in #1 into b's, add them to the stack,
     % and delete one b from the stack.
-    \edef\bStack{\scanBegins@#1\begin\end\expandafter\gobbleOne@\bStack}
+    \edef\bStack{\scanBegins@#1\begin\end\expandafter\gobbleOne@\bStack}%
     % If the stack is empty, we're done.
     % Otherwise, we need to read more \ends, so keep going.
     \ifx\bStack\emptyStack
