@@ -22,9 +22,10 @@
 
 \makeQuoteActive
 \protected\def`{%
+    \begingroup% don't pollute the environment with macros defined in ifNextTokIs@.
     \ifNextTokIs@`%
-        {\char96\char96}%
-        {\begingroup\setupASCII@\startParse@}%
+        {\endgroup\char96\char96}%
+        {\setupASCII@\startParse@}%
 }
 
 \newtoks\lexedTokens@
