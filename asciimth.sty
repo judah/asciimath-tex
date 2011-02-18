@@ -21,12 +21,10 @@
 \def\makeQuoteOther{\catcode96=12}
 
 \makeQuoteActive
-\def`{%
-    \begingroup
-    \setupASCII@
+\protected\def`{%
     \ifNextTokIs@`%
-        {\endgroup\char96\char96}%
-        {\startParse@}%
+        {\char96\char96}%
+        {\begingroup\setupASCII@\startParse@}%
 }
 
 \newtoks\lexedTokens@
