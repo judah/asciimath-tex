@@ -227,6 +227,14 @@ test of the package.
 \testRow{matrix[A_(1,1), ... ,A_(1,n); vdots,ddots,vdots; A_(m,1), ... ,A_(m,n)]}
 \end{examples}
 
+\begin{examples}{Embedded LaTeX environments}
+\rawExampleRow
+{x/env\{pmatrix\}(2 \& 3 \textbs\textbs 4 \& 5)}
+{`x / env{pmatrix}(2&3\\4&5)`}
+\rawExampleRow
+{env\{cases\}(sqrt(x) \& " if " x >= 0\textbs\textbs "undefined" \& " otherwise.")}
+{`env{cases}(sqrt(x) & " if " x >= 0\\ 0 & " otherwise.")`}
+\end{examples}
 
 \par
 \par
@@ -248,6 +256,8 @@ This command is also useful for adding commands like \verb|\label| inside of an
 \testRow{ {2+x}/{gamma^2beta}}
 \testRow{ \{2/(x+y)\}^3}
 \end{examples}
+
+
 
 \end{section}
 
