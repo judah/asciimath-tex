@@ -444,11 +444,18 @@
     \else\ifx#1\subblock\let\next=\parseSubblock@
     \else\ifx#1/\def\next{\useT0{}{#1}}%
     % Give a more helpful error message if we hit the end:
-    \else\ifx#1\endScan@\def\next{%
-        \errmessage{Ran into the end of input;
-            may be missing a closing delimiter.}}%
+    \else\def\next{\reportError@{#1}}%
+    \fi\fi\fi\fi\fi\fi\fi\fi\fi
+    \next
+}
+\def\reportError@#1{%
+    \ifx#1\endScan@\def\next{%
+        \errmessage{Oops: Ran into the end of input;
+            may be missing a closing delimiter}}%
+    \else\ifx#1\endParen\def\next##1{%
+        \errmessage{Oops: Extra unmatched right delimiter '\noexpand##1'}}%
     \else\def\next{\errmessage{Oops: ran into a non-block:\noexpand#1}}%
-    \fi\fi\fi\fi\fi\fi\fi\fi\fi\fi
+    \fi\fi
     \next
 }
 
