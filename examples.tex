@@ -241,8 +241,7 @@ test of the package.
 The {\tt raw} command lets you embed raw TeX commands inside of an asciimth environment.
 Unlike for other commands, curly braces must be used for {\tt raw}.
 
-This command is also useful for adding commands like \verb|\label| inside of an 
-{\tt alignA} environment.
+As a shortcut, you can also type \texttt{label\{equationName\}} inside of an {\tt asciimth} or {\tt alignA} environment.  It will have the same effect as typing\\ {\tt raw\{\char92label\{equationName\}\}}
 
 \begin{examples}{Braces and raw commands}
 \testRow{2^(3+y) + raw{\frac{5}{6x}}}
@@ -260,7 +259,6 @@ This command is also useful for adding commands like \verb|\label| inside of an
 
 
 \end{section}
-
 
 \begin{section}{Layout tests}
 

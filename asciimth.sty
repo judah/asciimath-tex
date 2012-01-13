@@ -229,6 +229,7 @@
 \def\matrixName@{@matrix@asciimacro@}
 \def\rawName@{@raw@asciimacro@}
 \def\envName@{@env@asciimacro@}
+\def\labelName@{@label@asciimacro@}
 \def\emitCSAndLex@{%
     \edef\asciiCmdName{@\the\csNameStr@ @asciimacro@}%
     % First, check whether this name has been set with \addASCIIMathCmd:
@@ -240,6 +241,8 @@
     \else\ifx\asciiCmdName\rightName@\def\next{\lexDelim@\endParen}%
     % Next, check if it's the start of a matrix:
     \else\ifx\asciiCmdName\matrixName@\def\next{\addLexed@\startMatrix\lexTokens@}%
+    % Next, check if it's a label:
+    \else\ifx\asciiCmdName\labelName@\def\next##1{\addBlock@{\label{##1}}\lexTokens@}%
     % Next, check if it's a "raw" command:
     \else\ifx\asciiCmdName\rawName@\def\next##1{\addBlock@{##1}\lexTokens@}%
     % Next, check if it's an "env" command:
@@ -255,7 +258,7 @@
     \else\def\next{%
             \errmessage{Oops, command "\the\csNameStr@" is not defined!}
         }%
-    \fi\fi\fi\fi\fi\fi\fi\next
+    \fi\fi\fi\fi\fi\fi\fi\fi\next
 }
 
 % If the longest possible sequence of "other" characters is defined,
