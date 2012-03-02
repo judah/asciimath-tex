@@ -622,6 +622,7 @@
 \addASCIIMathCmd{...,}{0}{\ldots,}
 \addASCIIMathCmd{...}{0}{\cdots}
 \addASCIIMathCmd{->}{0}{\to}
+\addASCIIMathCmd{<-}{0}{\leftarrow}
 \addASCIIMathCmd{>=}{0}{\ge}
 \addASCIIMathCmd{<=}{0}{\le}
 \addASCIIMathCmd{=>}{0}{\implies}
@@ -645,3 +646,11 @@
 % Goal is for `env{pmatrix}(...)` to turn into \begin{pmatrix}...\end{pmatrix}.
 % The command "env" is hard-coded in \emitCSAndLex@.
 \def\latexEnv@#1#2{\begin{#1}#2\end{#1}}
+
+% OK, plan is:
+% big(..), Big[...]
+% will scale both delimiters.
+% My idea is for "big" to be lexed as a macro,
+% and have addASCIIMathCmd hard-code the handling of parentheses.
+% (Actually, that's a useful thing to have, e.g. if you use sin[x] vs sin(x)).
+
